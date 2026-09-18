@@ -8,10 +8,10 @@
 
 > Diperbarui oleh Claude Code setiap kali satu hari selesai atau ada keputusan penting.
 
-- **Hari berjalan:** H1 (belum dimulai)
-- **Arsitektur:** belum diputuskan (Plan A / Plan B, lihat bagian 3)
+- **Hari berjalan:** H1 (hampir selesai)
+- **Arsitektur:** Plan A dipilih — Hermes memegang bot Telegram sepenuhnya (lihat `docs/DECISIONS.md`)
 - **Gerbang H7 (dashboard):** belum dievaluasi
-- **Catatan terakhir:** -
+- **Catatan terakhir:** Bot uji `@ringkasgrup_bot` aktif, privacy mode off, spike Plan A lolos 3 syarat. Provider LLM: OpenAI langsung (`gpt-5-mini`), bukan OpenRouter/Nous Portal seperti asumsi awal — lihat `docs/DECISIONS.md`. Beberapa bug environment VPS (routing OpenAI, IPv6 gateway hang) ditemukan & di-fix, dicatat di `docs/DECISIONS.md`. Item H1 tersisa: cek Hermes terima foto (opsional), selesaikan struktur folder repo penuh.
 
 ---
 
@@ -220,9 +220,9 @@ Tandai `is_noise` untuk: stiker/GIF tanpa teks; pesan yang hanya berisi emoji; p
 - Cek juga apakah Hermes bisa menerima foto (vision), karena ini opsional untuk nanti.
 
 **Verifikasi**
-- [ ] Hermes membalas di chat uji.
-- [ ] Bot menerima pesan biasa di grup (bukan hanya perintah).
-- [ ] Keputusan Plan A/B tercatat beserta alasannya.
+- [x] Hermes membalas di chat uji.
+- [x] Bot menerima pesan biasa di grup (bukan hanya perintah).
+- [x] Keputusan Plan A/B tercatat beserta alasannya.
 
 ### H2 — Senin, 21 Sep: Database & penerimaan pesan
 **Target**
