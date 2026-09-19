@@ -17,3 +17,9 @@
 - **16 unit test** (`tests/test_db.py`, `tests/test_noise_filter.py`) — ditulis penuh oleh Claude Code, mencakup idempotensi, pencarian FTS5, dan berbagai kasus noise/bukan-noise.
 - **Investigasi arsitektur:** Claude Code menemukan bahwa fitur observe-mode bawaan Hermes tidak bisa diintersep plugin untuk penyimpanan pesan (dikonfirmasi lewat pembacaan source code Hermes langsung), lalu merancang dan mengimplementasikan solusi alternatif berupa plugin Hermes kustom (`hermes/plugins/ringkas/`) yang mengambil alih logika "simpan semua pesan + diam kecuali di-mention" lewat hook `pre_gateway_dispatch`. Sepenuhnya dirancang dan diimplementasikan oleh Claude Code, diverifikasi langsung di grup Telegram bersama Dani.
 - **MCP server** (`ringkas/mcp_server.py`, tool `simpan_pesan`) — dibuat oleh Claude Code, terdaftar ke Hermes lewat `hermes mcp add`.
+
+## H3 — 2026-09-19: MCP server lengkap & perintah /ringkas
+
+- **4 MCP tool tambahan** (`ambil_pesan`, `cari_pesan`, `simpan_ringkasan`, `ambil_pengaturan_grup`) di `ringkas/mcp_server.py` dan fungsi pendukungnya di `ringkas/db.py` — dibuat penuh oleh Claude Code sesuai kontrak di `PLAN.md` bagian 6, plus 5 unit test tambahan.
+- **Perintah `/ringkas`** (`hermes/plugins/ringkas/__init__.py`) — dirancang dan diimplementasikan penuh oleh Claude Code memakai `ctx.llm.complete_structured()` (panggilan LLM one-shot dari plugin, bukan lewat turn agent biasa) setelah riset dokumentasi Hermes menunjukkan slash command plugin tidak punya akses ke sesi percakapan. Termasuk logika anti-mengarang (validasi `source_msg_ids` terhadap pesan yang benar-benar ada) yang sepenuhnya dirancang Claude Code.
+- Diverifikasi langsung di grup Telegram bersama Dani: 6 pesan campuran terkirim, `/ringkas` menghasilkan ringkasan sesuai format `PLAN.md`, semua item bersumber dari pesan asli, pesan noise ter-filter dengan benar.

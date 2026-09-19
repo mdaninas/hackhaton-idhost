@@ -6,6 +6,7 @@ dilakukan di lapisan presentasi (bot/dashboard), bukan di sini.
 
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 from contextlib import contextmanager
@@ -222,3 +223,105 @@ def insert_message(
         (group_id, telegram_msg_id, sender_id, teks, jenis, int(is_noise), reply_to, now_utc_iso()),
     )
     return cur.lastrowid
+
+
+def ambil_pesan(
+    conn: sqlite3.Connection,
+    *,
+    group_id: int,
+    sejak: str,
+    sampai: str,
+    tanpa_noise: bool = True,
+    limit: int = 1000,
+) -> list[sqlite3.Row]:
+    """Ambil pesan grup dalam rentang waktu [sejak, sampai) (UTC ISO), urut waktu."""
+    query = """
+        SELECT m.id, m.teks, m.jenis, m.is_noise, m.created_at, m.reply_to,
+               COALESCE(mem.nama_tampilan, mem.telegram_user_id) AS sender_nama
+        FROM messages m
+        LEFT JOIN members mem ON mem.id = m.sender_id
+        WHERE m.group_id = ? AND m.created_at >= ? AND m.created_at < ?
+    """
+    params: list = [group_id, sejak, sampai]
+    if tanpa_noise:
+        query += " AND m.is_noise = 0"
+    query += " ORDER BY m.created_at ASC LIMIT ?"
+    params.append(limit)
+    return conn.execute(query, params).fetchall()
+
+
+def cari_pesan(conn: sqlite3.Connection, *, group_id: int, query: str, limit: int = 20) -> list[sqlite3.Row]:
+    """Cari pesan grup lewat FTS5. `query` mengikuti sintaks MATCH FTS5."""
+    return conn.execute(
+        """
+        SELECT m.id, m.teks, m.created_at, COALESCE(mem.nama_tampilan, mem.telegram_user_id) AS sender_nama
+        FROM messages_fts f
+        JOIN messages m ON m.id = f.rowid
+        LEFT JOIN members mem ON mem.id = m.sender_id
+        WHERE messages_fts MATCH ? AND m.group_id = ?
+        ORDER BY rank
+        LIMIT ?
+        """,
+        (query, group_id, limit),
+    ).fetchall()
+
+
+def simpan_ringkasan(
+    conn: sqlite3.Connection,
+    *,
+    group_id: int,
+    periode_mulai: str,
+    periode_selesai: str,
+    isi_markdown: str,
+    jumlah_pesan: int,
+    jumlah_penting: int,
+) -> int:
+    """Simpan satu ringkasan. Return summary_id."""
+    cur = conn.execute(
+        """
+        INSERT INTO summaries (group_id, periode_mulai, periode_selesai, isi_markdown, jumlah_pesan, jumlah_penting, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (group_id, periode_mulai, periode_selesai, isi_markdown, jumlah_pesan, jumlah_penting, now_utc_iso()),
+    )
+    return cur.lastrowid
+
+
+def tambah_item(
+    conn: sqlite3.Connection,
+    *,
+    group_id: int,
+    summary_id: Optional[int],
+    tipe: str,
+    judul: str,
+    detail: Optional[str],
+    due_at: Optional[str],
+    source_msg_ids: list[int],
+) -> int:
+    """Simpan satu item (pengumuman/tenggat/keputusan/pertanyaan). Return item_id."""
+    cur = conn.execute(
+        """
+        INSERT INTO items (group_id, summary_id, tipe, judul, detail, due_at, source_msg_ids, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'aktif')
+        """,
+        (group_id, summary_id, tipe, judul, detail, due_at, json.dumps(source_msg_ids)),
+    )
+    return cur.lastrowid
+
+
+def ambil_pengaturan_grup(conn: sqlite3.Connection, *, group_id: int) -> dict:
+    """Ambil pengaturan grup (jam_ringkasan, kata_kunci_penting, retensi_hari, dst)."""
+    row = conn.execute(
+        "SELECT telegram_chat_id, nama, jam_ringkasan, kata_kunci_penting, retensi_hari, aktif FROM groups WHERE id = ?",
+        (group_id,),
+    ).fetchone()
+    if row is None:
+        return {}
+    return {
+        "telegram_chat_id": row["telegram_chat_id"],
+        "nama": row["nama"],
+        "jam_ringkasan": row["jam_ringkasan"],
+        "kata_kunci_penting": json.loads(row["kata_kunci_penting"]),
+        "retensi_hari": row["retensi_hari"],
+        "aktif": bool(row["aktif"]),
+    }

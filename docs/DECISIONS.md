@@ -82,3 +82,19 @@ Hasilnya secara perilaku user **sama persis** dengan target awal (bot diam kecua
 **Cara restart gateway yang aman (dicatat karena berkali-kali salah saat debugging):** `pkill -f "hermes gateway run"` mengembalikan exit code 1 kalau tidak ada proses yang cocok, dan itu bisa menghentikan rangkaian perintah shell. Selalu beri `|| true`, dan jalankan `nohup hermes gateway run > logfile 2>&1 & disown` sebagai command terpisah dari `pkill`, jangan digabung satu baris.
 
 **Verifikasi:** 4 pesan campuran (ucapan, "ok", emoji, mention) dikirim ke grup uji -> tersimpan semua dengan noise tag benar, dan hanya pesan mention yang dijawab bot (`pre_gateway_dispatch skip: reason=ringkas-ambient-observed` untuk 3 pesan lain, konfirmasi tidak ada panggilan LLM untuk itu).
+
+---
+
+## H3 — 2026-09-19: MCP tools lengkap + perintah `/ringkas`
+
+**Ditambahkan ke `ringkas/db.py` dan `ringkas/mcp_server.py`:** `ambil_pesan`, `cari_pesan` (FTS5), `simpan_ringkasan`, `tambah_item`, `ambil_pengaturan_grup`. Semua tool MCP menerima `chat_id` (Telegram chat id, string) secara konsisten, bukan id internal — supaya agent tidak perlu tahu skema database internal saat memanggilnya lewat percakapan biasa (mis. Q&A saat di-mention, disiapkan untuk H5).
+
+**Perintah `/ringkas`:** diimplementasikan sebagai slash command plugin (`ctx.register_command`), BUKAN lewat MCP tool call dari agent. Alasan: `ctx.register_command`'s handler cuma menerima `raw_args: str` -- tidak ada akses ke sesi percakapan/chat context sama sekali, dan `ctx.inject_message()` (cara lain memicu turn agent) butuh `session_key` gateway yang juga tidak tersedia di handler slash command. Jadi `/ringkas` memakai `ctx.llm.complete_structured()` -- satu panggilan LLM one-shot dengan JSON schema untuk ekstrak item (bukan turn multi-tool seperti biasa), lalu markdown ringkasan dirakit sendiri oleh kode Python dari item-item itu (skeleton format dikontrol kode, bukan LLM), dan disimpan langsung lewat `ringkas/db.py` (bukan lewat MCP call).
+
+**Cara plugin tahu chat_id saat ini:** hook `pre_gateway_dispatch` (yang sudah ada dari H2) fire untuk SETIAP pesan termasuk pesan `/ringkas` itu sendiri, sebelum command di-dispatch -- jadi plugin menyimpan `chat_id`/`chat_name` pesan terakhir ke variabel module-level (`_LAST_CHAT_ID`), lalu command handler membacanya. Cukup aman untuk skala satu grup uji hackathon ini; kalau nanti multi-grup dengan trafik bersamaan, perlu diganti `contextvars.ContextVar` atau cara yang benar-benar per-request.
+
+**Command Telegram (termasuk `/ringkas`) punya jalur otorisasi sendiri:** `_handle_command` di adapter Telegram Hermes memanggil `_should_process_message(msg, is_command=True)` dan `_is_user_authorized_from_message(msg)` SEBELUM event sampai ke `pre_gateway_dispatch` -- terpisah dari jalur pesan teks biasa. Karena `TELEGRAM_REQUIRE_MENTION` sudah dimatikan sejak H2, ini tidak masalah (semua command lolos), tapi penting diketahui kalau nanti mau membatasi siapa yang boleh pakai `/ringkas`.
+
+**Anti-mengarang:** setiap item dari LLM difilter lagi di kode -- `source_msg_ids` yang tidak ada di set pesan yang benar-benar diambil (`ambil_pesan`) dibuang, dan item tanpa `source_msg_ids` valid atau tanpa judul di-drop seluruhnya sebelum disimpan/ditampilkan.
+
+**Verifikasi:** 6 pesan dikirim ke grup uji (4 penting: pengumuman/tenggat/keputusan/pertanyaan, 2 noise: "ok" + emoji) -> `/ringkas` menghasilkan markdown sesuai format `PLAN.md` bagian 7 persis, 4 item tersimpan dengan `source_msg_ids` yang semuanya valid (merujuk pesan 1-4), 2 pesan noise tidak muncul di ringkasan sama sekali.

@@ -8,10 +8,10 @@
 
 > Diperbarui oleh Claude Code setiap kali satu hari selesai atau ada keputusan penting.
 
-- **Hari berjalan:** H2 (selesai)
+- **Hari berjalan:** H3 (selesai)
 - **Arsitektur:** Plan A dipilih — Hermes memegang bot Telegram sepenuhnya, tapi logika "simpan semua pesan + diam kecuali di-mention" dipindah ke plugin Hermes sendiri (`hermes/plugins/ringkas/`), bukan fitur observe bawaan Hermes yang ternyata tidak bisa diintersep. Lihat `docs/DECISIONS.md`.
 - **Gerbang H7 (dashboard):** belum dievaluasi
-- **Catatan terakhir:** `ringkas/db.py` (skema + FTS5) dan `ringkas/noise_filter.py` selesai dengan 16 unit test lulus. Pesan grup nyata sudah mulai tersimpan otomatis lewat plugin `pre_gateway_dispatch` sejak 19 Sep. MCP tool `simpan_pesan` juga terdaftar (dipakai plugin secara langsung, bukan lewat MCP call, demi performa). Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
+- **Catatan terakhir:** 5 MCP tool (`simpan_pesan`, `ambil_pesan`, `cari_pesan`, `simpan_ringkasan`, `ambil_pengaturan_grup`) terdaftar. Perintah `/ringkas` jalan dan sudah diverifikasi live di grup uji — format sesuai, source_msg_ids valid, noise ter-filter. 20 unit test lulus. Gap: belum ada skill/context file terpisah untuk format ringkasan (dibakukan di kode plugin, bukan system prompt — lihat catatan H3 di `docs/DECISIONS.md`). Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
 
 ---
 
@@ -236,14 +236,14 @@ Tandai `is_noise` untuk: stiker/GIF tanpa teks; pesan yang hanya berisi emoji; p
 
 ### H3 — Selasa, 22 Sep: MCP server & ringkasan manual
 **Target**
-- `mcp_server.py` dengan tool: `ambil_pesan`, `simpan_ringkasan`, `cari_pesan`, `ambil_pengaturan_grup`.
-- Daftarkan MCP server ke Hermes (cek konfigurasi MCP di dokumentasi Hermes).
-- Context file dan skill untuk format ringkasan.
-- Perintah `/ringkas` di grup untuk memicu ringkasan manual.
+- [x] `mcp_server.py` dengan tool: `ambil_pesan`, `simpan_ringkasan`, `cari_pesan`, `ambil_pengaturan_grup`.
+- [x] Daftarkan MCP server ke Hermes (cek konfigurasi MCP di dokumentasi Hermes).
+- [~] Context file dan skill untuk format ringkasan — **tidak dibuat sebagai file skill terpisah.** Format & aturan anti-mengarang dibakukan langsung di kode plugin (`hermes/plugins/ringkas/__init__.py`: json_schema + template markdown), bukan lewat system prompt/skill. Ini cukup untuk `/ringkas`, tapi kalau nanti agent diminta bikin ringkasan ad-hoc lewat mention biasa (bukan `/ringkas`), dia belum otomatis tahu format yang sama — perlu diputuskan di H5/H6 apakah itu dibutuhkan.
+- [x] Perintah `/ringkas` di grup untuk memicu ringkasan manual.
 
 **Verifikasi**
-- [ ] `/ringkas` menghasilkan ringkasan sesuai format, dan setiap item punya `source_msg_ids` yang valid.
-- [ ] Tidak ada item yang dikarang (cek manual 1 ringkasan).
+- [x] `/ringkas` menghasilkan ringkasan sesuai format, dan setiap item punya `source_msg_ids` yang valid.
+- [x] Tidak ada item yang dikarang (cek manual 1 ringkasan — 4 item, semua source_msg_ids merujuk pesan 1-4 yang benar ada, 2 pesan noise tidak masuk).
 
 ### H4 — Rabu, 23 Sep: Tenggat & pengingat terjadwal
 **Target**
