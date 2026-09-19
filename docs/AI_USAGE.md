@@ -9,3 +9,11 @@
 - **Konfigurasi gateway Telegram:** Claude Code menemukan dan menerapkan kombinasi env var yang tepat (`TELEGRAM_GROUP_ALLOWED_CHATS`, `TELEGRAM_REQUIRE_MENTION`, `TELEGRAM_OBSERVE_UNMENTIONED_GROUP_MESSAGES`) agar bot bisa membaca semua pesan grup tapi hanya membalas saat di-mention — dibuat penuh oleh Claude Code, diverifikasi langsung oleh Dani di Telegram.
 - **Nama bot:** Claude Code mengusulkan beberapa opsi nama bot Telegram; Dani memilih dan mendaftarkan `ringkasgrup_bot` di @BotFather sendiri.
 - **Dokumentasi keputusan:** `docs/DECISIONS.md` (Plan A vs Plan B, konfigurasi final, catatan bug environment) ditulis oleh Claude Code berdasarkan hasil spike test bersama Dani.
+
+## H2 — 2026-09-19: Database & penerimaan pesan
+
+- **`ringkas/db.py`** (skema SQLite lengkap + FTS5 + trigger sync) — dibuat penuh oleh Claude Code sesuai model data di `PLAN.md` bagian 5.
+- **`ringkas/noise_filter.py`** (penyaring noise berbasis aturan) — dibuat penuh oleh Claude Code sesuai aturan di `PLAN.md` bagian 7, termasuk daftar kata singkat dan pola tanggal/nominal uang.
+- **16 unit test** (`tests/test_db.py`, `tests/test_noise_filter.py`) — ditulis penuh oleh Claude Code, mencakup idempotensi, pencarian FTS5, dan berbagai kasus noise/bukan-noise.
+- **Investigasi arsitektur:** Claude Code menemukan bahwa fitur observe-mode bawaan Hermes tidak bisa diintersep plugin untuk penyimpanan pesan (dikonfirmasi lewat pembacaan source code Hermes langsung), lalu merancang dan mengimplementasikan solusi alternatif berupa plugin Hermes kustom (`hermes/plugins/ringkas/`) yang mengambil alih logika "simpan semua pesan + diam kecuali di-mention" lewat hook `pre_gateway_dispatch`. Sepenuhnya dirancang dan diimplementasikan oleh Claude Code, diverifikasi langsung di grup Telegram bersama Dani.
+- **MCP server** (`ringkas/mcp_server.py`, tool `simpan_pesan`) — dibuat oleh Claude Code, terdaftar ke Hermes lewat `hermes mcp add`.

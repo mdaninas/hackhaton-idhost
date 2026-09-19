@@ -42,6 +42,10 @@ Pemilik proyek: Dani (fresh graduate, terbiasa dengan Python dan SQL).
 
 ## Perintah proyek
 
-> Diisi oleh Claude Code begitu perintahnya sudah ditetapkan (instal, menjalankan setiap service, tes, evaluasi, cek log systemd). Jaga agar bagian ini selalu akurat.
-
-- _(belum ada)_
+- **Setup:** `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
+- **Jalankan test:** `.venv/bin/python -m pytest tests/ -v`
+- **Jalankan gateway Hermes (manual, foreground):** `hermes gateway run` (Ctrl+C untuk stop). Restart aman: `pkill -f "hermes gateway run" || true` lalu `nohup hermes gateway run > /tmp/gateway.log 2>&1 & disown` sebagai command terpisah (jangan digabung satu baris dengan pkill — lihat `docs/DECISIONS.md` bagian H2).
+- **Cek status gateway:** `hermes gateway status`
+- **Cek isi database:** `.venv/bin/python -c "import sqlite3; c=sqlite3.connect('data/ringkas.db'); [print(r) for r in c.execute('SELECT * FROM messages')]"`
+- **Plugin Hermes** (`hermes/plugins/ringkas/`) di-symlink ke `~/.hermes/plugins/ringkas/` — edit langsung di repo, tidak perlu copy ulang, tapi tetap perlu restart gateway supaya perubahan kepakai.
+- **MCP server** (`ringkas/mcp_server.py`, tool `simpan_pesan`) sudah terdaftar ke Hermes lewat `hermes mcp add ringkas ...` (config di `~/.hermes/config.yaml`, bukan di repo).

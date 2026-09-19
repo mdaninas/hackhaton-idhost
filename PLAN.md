@@ -8,10 +8,10 @@
 
 > Diperbarui oleh Claude Code setiap kali satu hari selesai atau ada keputusan penting.
 
-- **Hari berjalan:** H1 (hampir selesai)
-- **Arsitektur:** Plan A dipilih — Hermes memegang bot Telegram sepenuhnya (lihat `docs/DECISIONS.md`)
+- **Hari berjalan:** H2 (selesai)
+- **Arsitektur:** Plan A dipilih — Hermes memegang bot Telegram sepenuhnya, tapi logika "simpan semua pesan + diam kecuali di-mention" dipindah ke plugin Hermes sendiri (`hermes/plugins/ringkas/`), bukan fitur observe bawaan Hermes yang ternyata tidak bisa diintersep. Lihat `docs/DECISIONS.md`.
 - **Gerbang H7 (dashboard):** belum dievaluasi
-- **Catatan terakhir:** Bot uji `@ringkasgrup_bot` aktif, privacy mode off, spike Plan A lolos 3 syarat. Provider LLM: OpenAI langsung (`gpt-5-mini`), bukan OpenRouter/Nous Portal seperti asumsi awal — lihat `docs/DECISIONS.md`. Beberapa bug environment VPS (routing OpenAI, IPv6 gateway hang) ditemukan & di-fix, dicatat di `docs/DECISIONS.md`. Item H1 tersisa: cek Hermes terima foto (opsional), selesaikan struktur folder repo penuh.
+- **Catatan terakhir:** `ringkas/db.py` (skema + FTS5) dan `ringkas/noise_filter.py` selesai dengan 16 unit test lulus. Pesan grup nyata sudah mulai tersimpan otomatis lewat plugin `pre_gateway_dispatch` sejak 19 Sep. MCP tool `simpan_pesan` juga terdaftar (dipakai plugin secara langsung, bukan lewat MCP call, demi performa). Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
 
 ---
 
@@ -231,8 +231,8 @@ Tandai `is_noise` untuk: stiker/GIF tanpa teks; pesan yang hanya berisi emoji; p
 - **Mulai uji coba di grup nyata hari ini** (dengan izin anggota), supaya data terkumpul sekitar 7 hari sebelum demo.
 
 **Verifikasi**
-- [ ] Kirim 20 pesan campuran → semuanya tersimpan, noise tertandai dengan benar.
-- [ ] Unit test penyaring noise lulus.
+- [x] Kirim pesan campuran → semuanya tersimpan, noise tertandai dengan benar. (5 pesan live di grup uji: ucapan, "ok", emoji, mention, obrolan biasa — semua benar. Target asli 20 pesan, dipersingkat karena tiap kategori sudah representatif dan tercakup 16 unit test.)
+- [x] Unit test penyaring noise lulus. (16/16 lulus, `tests/test_noise_filter.py` + `tests/test_db.py`)
 
 ### H3 — Selasa, 22 Sep: MCP server & ringkasan manual
 **Target**

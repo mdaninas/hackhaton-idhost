@@ -1,0 +1,3 @@
+name: ringkas
+version: "1.0"
+description: Simpan semua pesan grup Telegram ke database Ringkas (pipeline H2), tanpa panggil LLM.

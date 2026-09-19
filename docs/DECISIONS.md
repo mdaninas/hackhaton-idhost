@@ -61,3 +61,24 @@ Catatan untuk siapa pun yang setup ulang VPS ini dari image yang sama:
 4. **Gateway Telegram hang tanpa error saat startup** karena proses "discover fallback IPs via DNS-over-HTTPS" mencoba jalur IPv6 yang di-blackhole (VPS ini tidak punya IPv6 global), dan timeout internalnya tidak berhasil memutus thread yang macet (referensi ke isu upstream #87015 di kode Hermes). Fix: `HERMES_TELEGRAM_DISABLE_FALLBACK_IPS=true`.
 
 **Peringatan tambahan dari Hermes sendiri (belum action item untuk H1, dicatat untuk nanti):** `hermes doctor`/security audit memperingatkan bahwa Hermes berjalan sebagai user **root** di VPS ini — risiko keamanan kalau ada prompt-injection atau endpoint yang exposed. Pertimbangkan menjalankan sebagai user non-root sebelum publik/demo (lihat juga catatan user `dani` terpisah yang sudah ada di VPS ini).
+
+---
+
+## H2 — 2026-09-19: `TELEGRAM_OBSERVE_UNMENTIONED_GROUP_MESSAGES` tidak bisa dipakai untuk penyimpanan pesan
+
+**Temuan penting.** Fitur bawaan Hermes `TELEGRAM_REQUIRE_MENTION` + `TELEGRAM_OBSERVE_UNMENTIONED_GROUP_MESSAGES` (dipakai di H1) ternyata bekerja di dalam **adapter Telegram**, bukan lewat jalur gateway generik. Pesan yang "diobservasi" langsung ditulis ke transcript sesi lewat `store.append_to_transcript(...)` di dalam `plugins/platforms/telegram/adapter.py`, lalu `return` -- **tidak pernah** melewati `GatewayRunner._handle_message()`, tempat hook plugin `pre_gateway_dispatch` seharusnya fire. Akibatnya, tidak ada cara bagi plugin/tool apa pun untuk "melihat" pesan yang diobservasi ini secara real-time.
+
+**Keputusan:** matikan `TELEGRAM_REQUIRE_MENTION`/`TELEGRAM_OBSERVE_UNMENTIONED_GROUP_MESSAGES` (di-comment di `.env`), dan pindahkan **seluruh** logika "simpan semua pesan + diam kecuali di-mention" ke plugin Hermes sendiri (`hermes/plugins/ringkas/`, di-symlink ke `~/.hermes/plugins/ringkas/`) lewat hook `pre_gateway_dispatch`:
+1. Setiap pesan grup masuk -> disimpan ke `messages` (dengan noise tagging), rule-based, **tanpa panggil LLM**.
+2. Kalau pesan tidak mention bot (dan bukan reply ke bot) -> return `{"action": "skip", "reason": "ringkas-ambient-observed"}`, gateway tidak dispatch ke agent.
+3. Kalau mention/reply -> return `None`, dispatch normal jalan seperti biasa.
+
+Hasilnya secara perilaku user **sama persis** dengan target awal (bot diam kecuali di-mention, biaya wajar), tapi implementasinya di plugin kita sendiri, bukan fitur bawaan Hermes -- supaya penyimpanan pesan mentah terjamin jalan untuk semua pesan.
+
+**Bug lain yang ditemukan & diperbaiki saat membangun plugin ini:**
+- `ringkas/db.py`: `get_connection()` tidak pernah memanggil `init_db()`, jadi tabel `messages` dkk baru ada kalau seseorang secara eksplisit memanggil `init_db()` duluan (di tes, ini otomatis lewat fixture; di plugin/live gateway, tidak). Fix: `init_db(conn)` sekarang dipanggil otomatis di dalam `get_connection()` (idempoten, `CREATE TABLE IF NOT EXISTS`).
+- Perbandingan `source.platform != "telegram"` di plugin salah -- `source.platform` adalah `Platform` enum (`gateway/config.py`), bukan string, jadi perbandingan langsung selalu `True` (tidak pernah match) dan fungsi `return` lebih awal tanpa menyimpan apa pun. Fix: bandingkan `source.platform.value`.
+
+**Cara restart gateway yang aman (dicatat karena berkali-kali salah saat debugging):** `pkill -f "hermes gateway run"` mengembalikan exit code 1 kalau tidak ada proses yang cocok, dan itu bisa menghentikan rangkaian perintah shell. Selalu beri `|| true`, dan jalankan `nohup hermes gateway run > logfile 2>&1 & disown` sebagai command terpisah dari `pkill`, jangan digabung satu baris.
+
+**Verifikasi:** 4 pesan campuran (ucapan, "ok", emoji, mention) dikirim ke grup uji -> tersimpan semua dengan noise tag benar, dan hanya pesan mention yang dijawab bot (`pre_gateway_dispatch skip: reason=ringkas-ambient-observed` untuk 3 pesan lain, konfirmasi tidak ada panggilan LLM untuk itu).
