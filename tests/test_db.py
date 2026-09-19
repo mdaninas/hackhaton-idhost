@@ -2,16 +2,24 @@ import sqlite3
 
 import pytest
 
+from datetime import datetime, timedelta, timezone
+
 from ringkas.db import (
     ambil_pengaturan_grup,
+    ambil_pengingat_jatuh_tempo,
     ambil_pesan,
     cari_pesan,
+    daftar_tenggat,
     get_or_create_group,
     get_or_create_member,
     init_db,
     insert_message,
+    pesan_ids_valid,
     simpan_ringkasan,
+    simpan_tenggat_dengan_pengingat,
     tambah_item,
+    tambah_pengingat,
+    tandai_pengingat_terkirim,
 )
 
 
@@ -159,3 +167,76 @@ def test_ambil_pengaturan_grup(conn):
     assert pengaturan["nama"] == "Grup Uji"
     assert pengaturan["retensi_hari"] == 7
     assert pengaturan["kata_kunci_penting"] == []
+
+
+def test_pesan_ids_valid_buang_id_palsu(conn):
+    gid = get_or_create_group(conn, "-100123")
+    msg_id = insert_message(conn, group_id=gid, telegram_msg_id="1", sender_id=None, teks="halo")
+    valid = pesan_ids_valid(conn, group_id=gid, ids=[msg_id, 99999])
+    assert valid == {msg_id}
+
+
+def test_simpan_tenggat_jadwalkan_2_pengingat_untuk_deadline_masa_depan(conn):
+    gid = get_or_create_group(conn, "-100123")
+    msg_id = insert_message(conn, group_id=gid, telegram_msg_id="1", sender_id=None, teks="iuran 50rb Kamis")
+    besok_jauh = (datetime.now(timezone.utc) + timedelta(days=10)).strftime("%Y-%m-%d")
+
+    hasil = simpan_tenggat_dengan_pengingat(
+        conn,
+        group_id=gid,
+        summary_id=None,
+        judul="Bayar iuran",
+        detail="50rb",
+        due_date_wib=besok_jauh,
+        source_msg_ids=[msg_id],
+    )
+    assert len(hasil["reminder_ids"]) == 2  # H-1 dan hari-H, keduanya masih di masa depan
+
+    row = conn.execute("SELECT tipe, source_msg_ids FROM items WHERE id = ?", (hasil["item_id"],)).fetchone()
+    assert row["tipe"] == "tenggat"
+    assert row["source_msg_ids"] == f"[{msg_id}]"
+
+
+def test_simpan_tenggat_tidak_jadwalkan_pengingat_untuk_deadline_lewat(conn):
+    gid = get_or_create_group(conn, "-100123")
+    msg_id = insert_message(conn, group_id=gid, telegram_msg_id="1", sender_id=None, teks="iuran kemarin")
+    kemarin = (datetime.now(timezone.utc) - timedelta(days=5)).strftime("%Y-%m-%d")
+
+    hasil = simpan_tenggat_dengan_pengingat(
+        conn, group_id=gid, summary_id=None, judul="Iuran lewat", detail=None,
+        due_date_wib=kemarin, source_msg_ids=[msg_id],
+    )
+    assert hasil["reminder_ids"] == []  # H-1 dan hari-H sudah lewat, tidak dijadwalkan
+
+
+def test_ambil_pengingat_jatuh_tempo_dan_tandai_terkirim(conn):
+    gid = get_or_create_group(conn, "-100123", nama="Grup Uji")
+    item_id = tambah_item(
+        conn, group_id=gid, summary_id=None, tipe="tenggat", judul="Tes",
+        detail=None, due_at="2026-01-01T00:00:00+00:00", source_msg_ids=[],
+    )
+    lampau = "2025-01-01T00:00:00+00:00"
+    reminder_id = tambah_pengingat(conn, item_id=item_id, kirim_pada=lampau, target="grup")
+
+    sekarang = datetime.now(timezone.utc).isoformat()
+    due = ambil_pengingat_jatuh_tempo(conn, sekarang_utc=sekarang)
+    assert len(due) == 1
+    assert due[0]["reminder_id"] == reminder_id
+    assert due[0]["telegram_chat_id"] == "-100123"
+
+    tandai_pengingat_terkirim(conn, reminder_id=reminder_id)
+    due_lagi = ambil_pengingat_jatuh_tempo(conn, sekarang_utc=sekarang)
+    assert due_lagi == []
+
+
+def test_daftar_tenggat(conn):
+    gid = get_or_create_group(conn, "-100123")
+    msg_id = insert_message(conn, group_id=gid, telegram_msg_id="1", sender_id=None, teks="iuran")
+    besok_jauh = (datetime.now(timezone.utc) + timedelta(days=10)).strftime("%Y-%m-%d")
+    simpan_tenggat_dengan_pengingat(
+        conn, group_id=gid, summary_id=None, judul="Bayar iuran", detail=None,
+        due_date_wib=besok_jauh, source_msg_ids=[msg_id],
+    )
+    daftar = daftar_tenggat(conn, group_id=gid)
+    assert len(daftar) == 1
+    assert daftar[0]["judul"] == "Bayar iuran"

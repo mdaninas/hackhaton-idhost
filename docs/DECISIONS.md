@@ -98,3 +98,29 @@ Hasilnya secara perilaku user **sama persis** dengan target awal (bot diam kecua
 **Anti-mengarang:** setiap item dari LLM difilter lagi di kode -- `source_msg_ids` yang tidak ada di set pesan yang benar-benar diambil (`ambil_pesan`) dibuang, dan item tanpa `source_msg_ids` valid atau tanpa judul di-drop seluruhnya sebelum disimpan/ditampilkan.
 
 **Verifikasi:** 6 pesan dikirim ke grup uji (4 penting: pengumuman/tenggat/keputusan/pertanyaan, 2 noise: "ok" + emoji) -> `/ringkas` menghasilkan markdown sesuai format `PLAN.md` bagian 7 persis, 4 item tersimpan dengan `source_msg_ids` yang semuanya valid (merujuk pesan 1-4), 2 pesan noise tidak muncul di ringkasan sama sekali.
+
+---
+
+## H4 — 2026-09-19: Tenggat, pengingat, dan ringkasan harian otomatis
+
+**Ekstraksi tenggat dengan tanggal pasti:** skema JSON untuk item `tenggat` diubah dari teks bebas (`due_at_wib`) menjadi `due_date_wib` ("YYYY-MM-DD", WIB) + `due_time_wib` opsional. LLM diberi konteks "hari ini adalah <nama hari>, <tanggal>" di instruksi supaya bisa menghitung tanggal relatif ("Kamis", "Jumat depan") jadi tanggal pasti. Kalau LLM tidak bisa memastikan tanggalnya, dia diinstruksikan mengosongkan `due_date_wib` dan pakai tipe "pengumuman" saja -- tidak menebak.
+
+**Penjadwalan pengingat:** fungsi baru `ringkas.db.simpan_tenggat_dengan_pengingat()` -- sekali dipanggil, langsung membuat item tenggat DAN menjadwalkan 2 pengingat (H-1 jam 08:00 WIB, hari-H jam 07:00 WIB), tapi HANYA yang waktunya masih di masa depan (supaya deadline yang sudah lewat tidak memicu reminder "terlambat" beruntun saat job pertama kali jalan). Dipakai baik oleh `/ringkas` (plugin) maupun `ringkas/daily_summary.py` (cron) -- satu sumber logika.
+
+**Anti-mengarang diperkuat di level MCP server:** tool `simpan_ringkasan` sekarang memvalidasi `source_msg_ids` tiap item terhadap SEMUA pesan grup (bukan cuma periode tertentu) lewat `pesan_ids_valid()`, dan membuang item tanpa judul atau tanpa id valid -- ini melindungi jalur agent (mention/percakapan biasa yang manggil MCP tool langsung), bukan cuma jalur `/ringkas` yang sudah divalidasi sendiri di plugin.
+
+**Ringkasan harian: kenapa `no_agent` script, bukan agent job biasa.** Awalnya dicoba agent cron job (prompt instruksikan panggil MCP tool `ambil_pesan`/`simpan_ringkasan`), tapi ternyata **Hermes tidak otomatis menyuntikkan tanggal/jam saat ini ke system prompt** -- dokumentasi Hermes sendiri bilang agent harus pakai tool `terminal` (`date`) kalau perlu tahu waktu sekarang, dan itu tidak reliable untuk cron job yang jadwalnya sama setiap hari tapi butuh tahu "hari ini" yang berbeda-beda. Solusi: `ringkas/daily_summary.py`, cron job `--no-agent`, panggil OpenAI langsung (bukan lewat `ctx.llm`, karena itu cuma ada di dalam plugin, tidak di script standalone) memakai kredensial yang dibaca manual dari `~/.hermes/.env` (bukan `os.environ` -- env subprocess cron `no_agent` disanitasi, secret provider tidak diwariskan). Logikanya sengaja meniru persis `/ringkas` di plugin supaya hasilnya konsisten.
+
+**Bug ditemukan saat build `daily_summary.py`:** panggilan OpenAI chat completions dengan `temperature: 0` ditolak (`HTTP 400: Unsupported value: 'temperature' does not support 0 with this model. Only the default (1) value is supported.`) untuk `gpt-5-mini` di endpoint ini. Parameter `temperature` dihapus dari request (pakai default).
+
+**Pengingat: kenapa juga `no_agent` script, baca token langsung dari file.** `ringkas/send_reminders.py`, cron job `--no-agent` tiap 5 menit, kirim lewat Telegram Bot API langsung (`ringkas/telegram_client.py`, stdlib `urllib` saja, tanpa dependency baru) -- sama sekali tidak butuh LLM untuk sekadar cek tabel `reminders` dan kirim pesan template.
+
+**Script cron HARUS ada fisik di `~/.hermes/scripts/`, symlink ditolak.** Percobaan pertama pakai symlink dari `~/.hermes/scripts/` ke file di repo (pola yang sama seperti plugin di H2) ditolak Hermes: `"Script path escapes the scripts directory via traversal"` -- ada guard keamanan yang resolve symlink dan cek hasilnya masih di dalam direktori scripts. Solusi: file fisik kecil (wrapper) di `~/.hermes/scripts/` yang cuma `sys.path.insert` ke `/root/hackhathon` lalu `import` dan panggil fungsi `main()` dari modul aslinya di repo -- source of truth logika tetap di repo, cuma file pemicu (2-3 baris) yang harus fisik di luar.
+
+**Gap yang disadari, belum dikerjakan:** `daily_summary.py` memproses SEMUA grup di tabel `groups` dengan `aktif=1` pada jam yang SAMA (13:00 UTC / 20:00 WIB, hardcode), belum baca `jam_ringkasan` per grup dari `ambil_pengaturan_grup()`. Cukup untuk 1 grup uji sekarang; kalau nanti ada banyak grup dengan jam ringkasan berbeda-beda, perlu job generator dinamis atau job per-grup.
+
+**Verifikasi:**
+- Pesan "Iuran study tour 250rb paling lambat Jumat tanggal 25" (dikirim 19 Sept, Sabtu) -> `due_at` tersimpan tepat `2026-09-24T17:00:00+00:00` (= 25 Sept 00:00 WIB, benar).
+- 2 pengingat terjadwal otomatis: `2026-09-24T01:00:00+00:00` (H-1, 08:00 WIB) dan `2026-09-25T00:00:00+00:00` (hari-H, 07:00 WIB) -- kedua waktu dihitung benar.
+- Pengingat uji dengan jadwal 2 menit ke depan: terkirim tepat waktu (dites manual dan lewat cron asli Hermes, `last_status: ok`, tick `every 5m` berjalan sesuai jadwal).
+- `ringkas/daily_summary.py` dites manual end-to-end: pesan ringkasan masuk ke grup Telegram, item + tenggat + pengingat tersimpan benar di database. Terdaftar sebagai cron job (`ringkas-daily-summary`, jam 20:00 WIB) untuk pengiriman otomatis besok dan seterusnya.

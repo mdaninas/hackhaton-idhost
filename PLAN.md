@@ -8,10 +8,10 @@
 
 > Diperbarui oleh Claude Code setiap kali satu hari selesai atau ada keputusan penting.
 
-- **Hari berjalan:** H3 (selesai)
+- **Hari berjalan:** H4 (selesai)
 - **Arsitektur:** Plan A dipilih — Hermes memegang bot Telegram sepenuhnya, tapi logika "simpan semua pesan + diam kecuali di-mention" dipindah ke plugin Hermes sendiri (`hermes/plugins/ringkas/`), bukan fitur observe bawaan Hermes yang ternyata tidak bisa diintersep. Lihat `docs/DECISIONS.md`.
 - **Gerbang H7 (dashboard):** belum dievaluasi
-- **Catatan terakhir:** 5 MCP tool (`simpan_pesan`, `ambil_pesan`, `cari_pesan`, `simpan_ringkasan`, `ambil_pengaturan_grup`) terdaftar. Perintah `/ringkas` jalan dan sudah diverifikasi live di grup uji — format sesuai, source_msg_ids valid, noise ter-filter. 20 unit test lulus. Gap: belum ada skill/context file terpisah untuk format ringkasan (dibakukan di kode plugin, bukan system prompt — lihat catatan H3 di `docs/DECISIONS.md`). Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
+- **Catatan terakhir:** 7 MCP tool terdaftar (tambah `tambah_tenggat`, `daftar_tenggat` di H4). Ekstraksi tenggat + pengingat H-1/hari-H otomatis jalan, diverifikasi live (manual + lewat cron asli Hermes). Ringkasan harian terdaftar sebagai cron job jam 20:00 WIB (`ringkas-daily-summary`), plus job `ringkas-reminder-check` tiap 5 menit. 25 unit test lulus. Gap: ringkasan harian masih hardcode untuk SEMUA grup di tabel `groups` dengan jam yang sama (13:00 UTC / 20:00 WIB), belum per-grup sesuai `jam_ringkasan` masing-masing — cukup untuk 1 grup uji, perlu direvisit kalau sudah multi-grup. Skill/context file terpisah untuk format ringkasan (gap H3) masih belum ada. Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
 
 ---
 
@@ -247,13 +247,13 @@ Tandai `is_noise` untuk: stiker/GIF tanpa teks; pesan yang hanya berisi emoji; p
 
 ### H4 — Rabu, 23 Sep: Tenggat & pengingat terjadwal
 **Target**
-- Ekstraksi tenggat → `tambah_tenggat` → jadwal pengingat (H-1 dan hari-H pagi, WIB).
-- Ringkasan otomatis harian lewat cron Hermes (default jam 20.00 WIB, bisa diatur per grup).
+- [x] Ekstraksi tenggat → `tambah_tenggat` → jadwal pengingat (H-1 dan hari-H pagi, WIB).
+- [x] Ringkasan otomatis harian lewat cron Hermes (jam 20.00 WIB, hardcode untuk semua grup aktif — belum per-grup, lihat catatan H4 di `docs/DECISIONS.md`).
 
 **Verifikasi**
-- [ ] Pesan "iuran 50rb paling lambat Kamis" → item tenggat dengan tanggal yang benar.
-- [ ] Pengingat terkirim tepat waktu (uji dengan jadwal beberapa menit ke depan).
-- [ ] Ringkasan harian terkirim otomatis.
+- [x] Pesan "iuran 50rb paling lambat Kamis" → item tenggat dengan tanggal yang benar. (Diuji dengan "Iuran study tour 250rb paling lambat Jumat tanggal 25" → `due_at` terhitung tepat `2026-09-24T17:00:00+00:00` = 25 Sept 00:00 WIB.)
+- [x] Pengingat terkirim tepat waktu (uji dengan jadwal beberapa menit ke depan). Diuji 2 kali: manual (reminder 2 menit ke depan, terkirim & tertandai) dan lewat cron asli Hermes (`last_status: ok`, tick berjalan sesuai jadwal every-5m).
+- [x] Ringkasan harian terkirim otomatis. Script diuji manual end-to-end (Telegram menerima pesan, item + tenggat + pengingat tersimpan benar) dan terdaftar sebagai cron job no_agent jam 20:00 WIB (13:00 UTC) — kirim otomatis pertama akan terjadi besok karena hari ini sudah lewat jam segitu.
 
 ### H5 — Kamis, 24 Sep: Tanya jawab riwayat grup
 **Target**

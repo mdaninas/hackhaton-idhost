@@ -23,3 +23,10 @@
 - **4 MCP tool tambahan** (`ambil_pesan`, `cari_pesan`, `simpan_ringkasan`, `ambil_pengaturan_grup`) di `ringkas/mcp_server.py` dan fungsi pendukungnya di `ringkas/db.py` — dibuat penuh oleh Claude Code sesuai kontrak di `PLAN.md` bagian 6, plus 5 unit test tambahan.
 - **Perintah `/ringkas`** (`hermes/plugins/ringkas/__init__.py`) — dirancang dan diimplementasikan penuh oleh Claude Code memakai `ctx.llm.complete_structured()` (panggilan LLM one-shot dari plugin, bukan lewat turn agent biasa) setelah riset dokumentasi Hermes menunjukkan slash command plugin tidak punya akses ke sesi percakapan. Termasuk logika anti-mengarang (validasi `source_msg_ids` terhadap pesan yang benar-benar ada) yang sepenuhnya dirancang Claude Code.
 - Diverifikasi langsung di grup Telegram bersama Dani: 6 pesan campuran terkirim, `/ringkas` menghasilkan ringkasan sesuai format `PLAN.md`, semua item bersumber dari pesan asli, pesan noise ter-filter dengan benar.
+
+## H4 — 2026-09-19: Tenggat, pengingat, dan ringkasan harian otomatis
+
+- **Ekstraksi tanggal tenggat pasti** (skema `due_date_wib`/`due_time_wib` + konteks tanggal hari ini di prompt LLM) dan **penjadwalan pengingat H-1/hari-H** (`ringkas.db.simpan_tenggat_dengan_pengingat`) — dirancang dan diimplementasikan penuh oleh Claude Code.
+- **`ringkas/daily_summary.py`** (ringkasan otomatis harian) dan **`ringkas/send_reminders.py`** (pengirim pengingat) — dibuat penuh oleh Claude Code sebagai cron job `no_agent`, setelah riset dokumentasi Hermes yang menunjukkan agent tidak otomatis tahu tanggal saat ini (perlu tool `terminal`), sehingga pendekatan yang lebih deterministik (panggil OpenAI API langsung, bukan lewat sesi agent) dipilih.
+- Debugging mandiri oleh Claude Code: error `temperature` tidak didukung model `gpt-5-mini` di endpoint chat completions, dan pembatasan keamanan Hermes yang menolak symlink script cron (diselesaikan dengan wrapper script fisik).
+- Kedua cron job diverifikasi live bersama Dani: pengingat terkirim tepat waktu (uji manual + lewat scheduler asli Hermes), ringkasan harian terkirim ke grup Telegram end-to-end.

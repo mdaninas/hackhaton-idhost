@@ -17,10 +17,13 @@ from ringkas.db import (
     ambil_pesan as _ambil_pesan,
     cari_pesan as _cari_pesan,
     connect,
+    daftar_tenggat as _daftar_tenggat,
     get_or_create_group,
     get_or_create_member,
     insert_message,
+    pesan_ids_valid,
     simpan_ringkasan as _simpan_ringkasan,
+    simpan_tenggat_dengan_pengingat,
     tambah_item,
 )
 from ringkas.noise_filter import is_noise
@@ -133,8 +136,12 @@ def simpan_ringkasan(
         jumlah_penting: Jumlah pesan yang dianggap penting (bukan noise).
         items: List item, masing-masing dict dengan keys:
             tipe ("pengumuman"|"tenggat"|"keputusan"|"pertanyaan"), judul, detail,
-            due_at (ISO 8601 UTC atau None), source_msg_ids (list int, WAJIB
-            berasal dari id hasil ambil_pesan/cari_pesan -- jangan mengarang).
+            source_msg_ids (list int, WAJIB berasal dari id hasil ambil_pesan/cari_pesan
+            -- id yang tidak valid otomatis dibuang, item tanpa id valid dibuang seluruhnya).
+            Untuk tipe "tenggat", isi juga due_date_wib ("YYYY-MM-DD", tanggal WIB PASTI,
+            bukan "Kamis depan" mentah -- hitung dari tanggal hari ini) dan due_time_wib
+            (opsional, "HH:MM"). Kalau tanggal pasti tidak bisa ditentukan, jangan pakai
+            tipe "tenggat" -- pakai "pengumuman" saja.
 
     Returns:
         dict berisi summary_id dan jumlah item tersimpan.
@@ -151,17 +158,94 @@ def simpan_ringkasan(
             jumlah_penting=jumlah_penting,
         )
         for item in items or []:
-            tambah_item(
-                conn,
-                group_id=group_id,
-                summary_id=summary_id,
-                tipe=item.get("tipe", "pengumuman"),
-                judul=item.get("judul", ""),
-                detail=item.get("detail"),
-                due_at=item.get("due_at"),
-                source_msg_ids=item.get("source_msg_ids", []),
-            )
+            judul = item.get("judul", "")
+            source_msg_ids = item.get("source_msg_ids", [])
+            if not judul or not pesan_ids_valid(conn, group_id=group_id, ids=source_msg_ids):
+                continue
+            if item.get("tipe") == "tenggat" and item.get("due_date_wib"):
+                simpan_tenggat_dengan_pengingat(
+                    conn,
+                    group_id=group_id,
+                    summary_id=summary_id,
+                    judul=judul,
+                    detail=item.get("detail"),
+                    due_date_wib=item["due_date_wib"],
+                    due_time_wib=item.get("due_time_wib", ""),
+                    source_msg_ids=source_msg_ids,
+                )
+            else:
+                ids_valid = list(pesan_ids_valid(conn, group_id=group_id, ids=source_msg_ids))
+                tambah_item(
+                    conn,
+                    group_id=group_id,
+                    summary_id=summary_id,
+                    tipe=item.get("tipe", "pengumuman"),
+                    judul=judul,
+                    detail=item.get("detail"),
+                    due_at=None,
+                    source_msg_ids=ids_valid,
+                )
     return {"summary_id": summary_id, "items_disimpan": len(items or [])}
+
+
+@mcp.tool()
+def tambah_tenggat(
+    chat_id: str,
+    judul: str,
+    due_date_wib: str,
+    source_msg_ids: list[int],
+    due_time_wib: str = "",
+    detail: str = "",
+) -> dict:
+    """Buat satu item tenggat + jadwalkan pengingat otomatis (H-1 dan hari-H pagi, WIB).
+
+    Args:
+        chat_id: Telegram chat ID grup.
+        judul: Judul singkat tenggat (mis. "Bayar iuran study tour").
+        due_date_wib: Tanggal deadline PASTI, format "YYYY-MM-DD", zona WIB.
+            Hitung dari tanggal hari ini + ekspresi waktu di pesan (mis. "Kamis" -> tanggal
+            Kamis terdekat ke depan). Kalau tidak bisa dipastikan, JANGAN panggil tool ini.
+        source_msg_ids: id pesan (dari ambil_pesan/cari_pesan) yang jadi dasar tenggat ini.
+        due_time_wib: Jam deadline kalau disebutkan di pesan, format "HH:MM" (opsional).
+        detail: Detail tambahan (opsional).
+
+    Returns:
+        dict berisi item_id, jumlah pengingat terjadwal, dan due_label untuk ditampilkan.
+    """
+    with connect() as conn:
+        group_id = get_or_create_group(conn, chat_id)
+        hasil = simpan_tenggat_dengan_pengingat(
+            conn,
+            group_id=group_id,
+            summary_id=None,
+            judul=judul,
+            detail=detail or None,
+            due_date_wib=due_date_wib,
+            due_time_wib=due_time_wib,
+            source_msg_ids=source_msg_ids,
+        )
+    return {
+        "item_id": hasil["item_id"],
+        "pengingat_terjadwal": len(hasil["reminder_ids"]),
+        "due_label": hasil["due_label"],
+        "source_msg_ids_valid": hasil["source_msg_ids"],
+    }
+
+
+@mcp.tool()
+def daftar_tenggat(chat_id: str) -> list[dict]:
+    """Daftar tenggat aktif (belum ditandai selesai) untuk sebuah grup, urut tanggal terdekat.
+
+    Args:
+        chat_id: Telegram chat ID grup.
+    """
+    with connect() as conn:
+        group_id = get_or_create_group(conn, chat_id)
+        rows = _daftar_tenggat(conn, group_id=group_id)
+    return [
+        {"id": r["id"], "judul": r["judul"], "detail": r["detail"], "due_at": r["due_at"]}
+        for r in rows
+    ]
 
 
 @mcp.tool()

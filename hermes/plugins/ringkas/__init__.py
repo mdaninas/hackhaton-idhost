@@ -34,6 +34,7 @@ from ringkas.db import (  # noqa: E402
     get_or_create_member,
     insert_message,
     simpan_ringkasan,
+    simpan_tenggat_dengan_pengingat,
     tambah_item,
 )
 from ringkas.noise_filter import is_noise  # noqa: E402
@@ -108,7 +109,11 @@ _ITEMS_SCHEMA = {
                     "tipe": {"type": "string", "enum": ["pengumuman", "tenggat", "keputusan", "pertanyaan"]},
                     "judul": {"type": "string"},
                     "detail": {"type": "string"},
-                    "due_at_wib": {"type": "string", "description": "Tanggal/jam WIB apa adanya dari pesan, atau string kosong"},
+                    "due_date_wib": {
+                        "type": "string",
+                        "description": "WAJIB diisi kalau tipe=tenggat DAN tanggal pastinya bisa dihitung: format YYYY-MM-DD (WIB). Kosongkan kalau tipe bukan tenggat, atau tanggal pastinya tidak bisa dipastikan dari pesan.",
+                    },
+                    "due_time_wib": {"type": "string", "description": "Jam WIB HH:MM kalau disebutkan, atau string kosong"},
                     "source_msg_ids": {"type": "array", "items": {"type": "integer"}},
                 },
                 "required": ["tipe", "judul", "source_msg_ids"],
@@ -176,15 +181,19 @@ def _handle_ringkas(raw_args, ctx=None):
     if ctx is None or not hasattr(ctx, "llm"):
         return f"{header}\n(Gagal membuat ringkasan: akses LLM plugin tidak tersedia.)"
 
+    hari_indo = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"][now_wib.weekday()]
     try:
         result = ctx.llm.complete_structured(
             instructions=(
                 "Kamu asisten yang meringkas obrolan grup Telegram berbahasa Indonesia. "
+                f"Hari ini {hari_indo}, {now_wib.strftime('%Y-%m-%d')} (WIB). "
                 "Ekstrak HANYA item yang benar-benar ada di pesan berikut ini -- JANGAN MENGARANG. "
                 "Setiap item WAJIB punya source_msg_ids berisi id pesan (angka di dalam [id=...]) "
                 "yang benar-benar mendasarinya. Kategori: 'pengumuman' (info umum), "
-                "'tenggat' (ada tenggat waktu/deadline -- catat tanggal/jam apa adanya di due_at_wib, "
-                "jangan menebak kalau ambigu), 'keputusan' (sudah diputuskan), "
+                "'tenggat' (ada tenggat waktu/deadline -- hitung due_date_wib (YYYY-MM-DD) dari "
+                "ekspresi waktu di pesan relatif ke hari ini, mis. 'Kamis' -> tanggal Kamis "
+                "terdekat ke depan; kalau tidak bisa dipastikan, kosongkan due_date_wib dan pakai "
+                "tipe 'pengumuman' saja, jangan menebak), 'keputusan' (sudah diputuskan), "
                 "'pertanyaan' (pertanyaan yang belum terjawab di akhir obrolan). "
                 "Kalau tidak ada item pada suatu kategori, jangan buat entrinya."
             ),
@@ -210,10 +219,11 @@ def _handle_ringkas(raw_args, ctx=None):
     bagian: dict[str, list[str]] = {"pengumuman": [], "tenggat": [], "keputusan": [], "pertanyaan": []}
     for item in items_valid:
         tipe = item.get("tipe") if item.get("tipe") in bagian else "pengumuman"
+        item["_tipe_final"] = tipe
         judul = item["judul"]
-        due = item.get("due_at_wib") or ""
-        if tipe == "tenggat" and due:
-            bagian[tipe].append(f"{judul} — {due}")
+        if tipe == "tenggat" and item.get("due_date_wib"):
+            label = item["due_date_wib"] + (f" {item['due_time_wib']} WIB" if item.get("due_time_wib") else "")
+            bagian["tenggat"].append(f"{judul} — {label}")
         else:
             bagian[tipe].append(judul)
 
@@ -238,14 +248,29 @@ def _handle_ringkas(raw_args, ctx=None):
             jumlah_penting=len(pesan_penting),
         )
         for item in items_valid:
+            if item["_tipe_final"] == "tenggat" and item.get("due_date_wib"):
+                try:
+                    simpan_tenggat_dengan_pengingat(
+                        conn,
+                        group_id=group_id,
+                        summary_id=summary_id,
+                        judul=item["judul"],
+                        detail=item.get("detail"),
+                        due_date_wib=item["due_date_wib"],
+                        due_time_wib=item.get("due_time_wib", ""),
+                        source_msg_ids=item["source_msg_ids"],
+                    )
+                    continue
+                except ValueError:
+                    pass  # due_date_wib tidak valid -- jatuh ke tambah_item biasa di bawah
             tambah_item(
                 conn,
                 group_id=group_id,
                 summary_id=summary_id,
-                tipe=item.get("tipe") if item.get("tipe") in bagian else "pengumuman",
+                tipe=item["_tipe_final"],
                 judul=item["judul"],
                 detail=item.get("detail"),
-                due_at=item.get("due_at_wib") or None,
+                due_at=None,
                 source_msg_ids=item["source_msg_ids"],
             )
 

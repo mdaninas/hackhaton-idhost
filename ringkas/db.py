@@ -10,11 +10,12 @@ import json
 import os
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterator, Optional
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "data" / "ringkas.db"
+WIB = timezone(timedelta(hours=7))
 
 
 def now_utc_iso() -> str:
@@ -307,6 +308,106 @@ def tambah_item(
         (group_id, summary_id, tipe, judul, detail, due_at, json.dumps(source_msg_ids)),
     )
     return cur.lastrowid
+
+
+def pesan_ids_valid(conn: sqlite3.Connection, *, group_id: int, ids: list[int]) -> set[int]:
+    """Filter `ids` supaya hanya berisi id pesan yang BENAR ADA di grup ini (anti-mengarang)."""
+    if not ids:
+        return set()
+    placeholders = ",".join("?" * len(ids))
+    rows = conn.execute(
+        f"SELECT id FROM messages WHERE group_id = ? AND id IN ({placeholders})",
+        (group_id, *ids),
+    ).fetchall()
+    return {r["id"] for r in rows}
+
+
+def tambah_pengingat(conn: sqlite3.Connection, *, item_id: int, kirim_pada: str, target: str = "grup") -> int:
+    """Jadwalkan satu pengingat untuk sebuah item tenggat. `kirim_pada`: ISO 8601 UTC."""
+    cur = conn.execute(
+        "INSERT INTO reminders (item_id, kirim_pada, target, terkirim) VALUES (?, ?, ?, 0)",
+        (item_id, kirim_pada, target),
+    )
+    return cur.lastrowid
+
+
+def ambil_pengingat_jatuh_tempo(conn: sqlite3.Connection, *, sekarang_utc: str) -> list[sqlite3.Row]:
+    """Ambil semua pengingat yang sudah waktunya kirim tapi belum terkirim."""
+    return conn.execute(
+        """
+        SELECT r.id AS reminder_id, r.item_id, r.target, i.judul, i.detail, i.due_at, i.tipe,
+               g.telegram_chat_id
+        FROM reminders r
+        JOIN items i ON i.id = r.item_id
+        JOIN groups g ON g.id = i.group_id
+        WHERE r.terkirim = 0 AND r.kirim_pada <= ?
+        """,
+        (sekarang_utc,),
+    ).fetchall()
+
+
+def tandai_pengingat_terkirim(conn: sqlite3.Connection, *, reminder_id: int) -> None:
+    conn.execute("UPDATE reminders SET terkirim = 1 WHERE id = ?", (reminder_id,))
+
+
+def simpan_tenggat_dengan_pengingat(
+    conn: sqlite3.Connection,
+    *,
+    group_id: int,
+    summary_id: Optional[int],
+    judul: str,
+    detail: Optional[str],
+    due_date_wib: str,
+    due_time_wib: str = "",
+    source_msg_ids: list[int],
+) -> dict:
+    """Simpan item tenggat + jadwalkan pengingat H-1 dan hari-H (pagi, WIB).
+
+    `due_date_wib` WAJIB format "YYYY-MM-DD" (tanggal lokal WIB, sudah pasti --
+    bukan "Kamis depan" mentah). Pengingat hanya dijadwalkan kalau waktunya
+    masih di masa depan (supaya deadline yang sudah lewat tidak bikin reminder
+    langsung terkirim beruntun saat job jalan).
+    """
+    ids_valid = list(pesan_ids_valid(conn, group_id=group_id, ids=source_msg_ids))
+    due_tanggal = datetime.strptime(due_date_wib, "%Y-%m-%d").replace(tzinfo=WIB)
+    due_at_utc = due_tanggal.astimezone(timezone.utc).isoformat()
+    label = due_date_wib + (f" {due_time_wib} WIB" if due_time_wib else "")
+
+    item_id = tambah_item(
+        conn,
+        group_id=group_id,
+        summary_id=summary_id,
+        tipe="tenggat",
+        judul=judul,
+        detail=detail,
+        due_at=due_at_utc,
+        source_msg_ids=ids_valid,
+    )
+
+    now_utc = datetime.now(timezone.utc)
+    reminder_ids = []
+    for delta_hari, jam in ((-1, 8), (0, 7)):
+        waktu_wib = (due_tanggal + timedelta(days=delta_hari)).replace(hour=jam, minute=0, second=0, microsecond=0)
+        waktu_utc = waktu_wib.astimezone(timezone.utc)
+        if waktu_utc > now_utc:
+            reminder_ids.append(
+                tambah_pengingat(conn, item_id=item_id, kirim_pada=waktu_utc.isoformat(), target="grup")
+            )
+
+    return {"item_id": item_id, "reminder_ids": reminder_ids, "due_label": label, "source_msg_ids": ids_valid}
+
+
+def daftar_tenggat(conn: sqlite3.Connection, *, group_id: int) -> list[sqlite3.Row]:
+    """Daftar tenggat aktif (belum lewat / belum ditandai selesai) untuk sebuah grup."""
+    return conn.execute(
+        """
+        SELECT id, judul, detail, due_at, source_msg_ids
+        FROM items
+        WHERE group_id = ? AND tipe = 'tenggat' AND status = 'aktif'
+        ORDER BY due_at ASC
+        """,
+        (group_id,),
+    ).fetchall()
 
 
 def ambil_pengaturan_grup(conn: sqlite3.Connection, *, group_id: int) -> dict:
