@@ -17,7 +17,6 @@ Dua tanggung jawab:
 from __future__ import annotations
 
 import os
-import re
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -40,7 +39,6 @@ from ringkas.db import (  # noqa: E402
 from ringkas.noise_filter import is_noise  # noqa: E402
 
 BOT_USERNAME = os.environ.get("RINGKAS_BOT_USERNAME", "ringkasgrup_bot")
-_MENTION_RE = re.compile(rf"@{re.escape(BOT_USERNAME)}\b", re.IGNORECASE)
 WIB = timezone(timedelta(hours=7))
 
 # Chat_id grup dari pesan yang baru saja lewat pre_gateway_dispatch. Cukup
@@ -50,6 +48,36 @@ WIB = timezone(timedelta(hours=7))
 # sama. Untuk skala uji coba single-group hackathon ini cukup aman.
 _LAST_CHAT_ID: str | None = None
 _LAST_CHAT_NAMA: str | None = None
+
+
+def _pesan_mention_bot(event) -> bool:
+    """Cek mention lewat entity Telegram asli (raw_message), BUKAN event.text.
+
+    Hermes selalu membersihkan "@botusername" dari event.text sebelum hook
+    pre_gateway_dispatch fire (lihat _clean_bot_trigger_text di adapter
+    Telegram) -- jadi regex terhadap event.text tidak akan pernah match.
+    Entity "mention" di pesan asli itu satu-satunya sumber yang bisa dipakai.
+    """
+    if getattr(event, "reply_to_is_own_message", False):
+        return True
+    raw = getattr(event, "raw_message", None)
+    if raw is None:
+        return False
+    expected = f"@{BOT_USERNAME}".lower()
+    for text_attr, entities_attr in (("text", "entities"), ("caption", "caption_entities")):
+        text = getattr(raw, text_attr, None) or ""
+        entities = getattr(raw, entities_attr, None) or []
+        for ent in entities:
+            etype = str(getattr(ent, "type", "")).split(".")[-1].lower()
+            if etype != "mention":
+                continue
+            offset = getattr(ent, "offset", None)
+            length = getattr(ent, "length", None)
+            if offset is None or length is None:
+                continue
+            if text[offset : offset + length].strip().lower() == expected:
+                return True
+    return False
 
 
 def _simpan_pesan_masuk(event, **kwargs):
@@ -92,7 +120,7 @@ def _simpan_pesan_masuk(event, **kwargs):
     if is_command:
         return None  # command selalu boleh lewat, terlepas dari mention
 
-    mentioned = bool(_MENTION_RE.search(teks)) or bool(getattr(event, "reply_to_is_own_message", False))
+    mentioned = _pesan_mention_bot(event)
     if not mentioned:
         return {"action": "skip", "reason": "ringkas-ambient-observed"}
     return None
@@ -277,10 +305,41 @@ def _handle_ringkas(raw_args, ctx=None):
     return markdown
 
 
+def _persona_ringkas(session_info: dict) -> str:
+    """System prompt section: persona 'Ringkas' + aturan Q&A riwayat grup (H5).
+
+    Dipanggil sekali per sesi baru. Kalau session_info tidak menyebut platform
+    telegram, kosongkan supaya tidak mengganggu sesi CLI/lainnya di VPS yang
+    sama.
+    """
+    if session_info.get("platform") != "telegram":
+        return ""
+    chat_id = _LAST_CHAT_ID or "(tidak diketahui)"
+    nama_grup = _LAST_CHAT_NAMA or "grup ini"
+    return (
+        "Kamu adalah 'Ringkas', asisten peringkas grup chat Telegram -- BUKAN asisten pribadi umum. "
+        f"Kamu sedang aktif di grup '{nama_grup}' dengan chat_id=\"{chat_id}\". "
+        "Kalau di-mention dengan pertanyaan tentang riwayat/isi grup ini (siapa bilang apa, kapan, "
+        "info tenggat/iuran/pengumuman, dst): WAJIB panggil tool cari_pesan atau ambil_pesan dulu "
+        f"(pakai chat_id=\"{chat_id}\") untuk cari jawabannya di pesan yang BENAR ADA, baru jawab "
+        "sambil menyebut sumbernya (mis. dari pesan siapa/kapan). JANGAN menjawab dari asumsi, dan "
+        "JANGAN menawarkan untuk membuatkan pesan ke pihak lain -- tugasmu menjawab langsung dari "
+        "data grup. Kalau setelah dicari tidak ketemu, jawab jujur dan singkat: "
+        "\"Aku tidak menemukan info itu di grup.\" -- jangan mengarang. "
+        "Balas dalam bahasa Indonesia, singkat dan langsung ke inti."
+    )
+
+
 def register(ctx):
     ctx.register_hook("pre_gateway_dispatch", _simpan_pesan_masuk)
     ctx.register_command(
         "ringkas",
         handler=lambda raw_args: _handle_ringkas(raw_args, ctx=ctx),
         description="Buat ringkasan manual pesan grup hari ini",
+    )
+    ctx.register_system_prompt_section(
+        "ringkas.persona",
+        _persona_ringkas,
+        position="after_memory",
+        max_chars=2000,
     )

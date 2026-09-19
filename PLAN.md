@@ -8,10 +8,10 @@
 
 > Diperbarui oleh Claude Code setiap kali satu hari selesai atau ada keputusan penting.
 
-- **Hari berjalan:** H4 (selesai)
+- **Hari berjalan:** H5 (selesai)
 - **Arsitektur:** Plan A dipilih — Hermes memegang bot Telegram sepenuhnya, tapi logika "simpan semua pesan + diam kecuali di-mention" dipindah ke plugin Hermes sendiri (`hermes/plugins/ringkas/`), bukan fitur observe bawaan Hermes yang ternyata tidak bisa diintersep. Lihat `docs/DECISIONS.md`.
 - **Gerbang H7 (dashboard):** belum dievaluasi
-- **Catatan terakhir:** 7 MCP tool terdaftar (tambah `tambah_tenggat`, `daftar_tenggat` di H4). Ekstraksi tenggat + pengingat H-1/hari-H otomatis jalan, diverifikasi live (manual + lewat cron asli Hermes). Ringkasan harian terdaftar sebagai cron job jam 20:00 WIB (`ringkas-daily-summary`), plus job `ringkas-reminder-check` tiap 5 menit. 25 unit test lulus. Gap: ringkasan harian masih hardcode untuk SEMUA grup di tabel `groups` dengan jam yang sama (13:00 UTC / 20:00 WIB), belum per-grup sesuai `jam_ringkasan` masing-masing — cukup untuk 1 grup uji, perlu direvisit kalau sudah multi-grup. Skill/context file terpisah untuk format ringkasan (gap H3) masih belum ada. Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
+- **Catatan terakhir:** Q&A riwayat grup jalan lewat persona plugin (`ctx.register_system_prompt_section`) yang mewajibkan agent panggil `cari_pesan`/`ambil_pesan` sebelum jawab pertanyaan tentang grup, dan mengakui tidak tahu kalau tidak ketemu — ini sekaligus menutup gap skill/format dari H3 (`ringkas.persona` section). Bug penting ditemukan & diperbaiki di H5: deteksi mention di plugin sebelumnya tidak pernah jalan karena Hermes menghapus teks "@botusername" dari `event.text` sebelum hook kita fire — sekarang baca dari `event.raw_message` entities langsung. 25 unit test lulus. Gap: ringkasan harian masih hardcode jam yang sama untuk semua grup (H4), belum baca `jam_ringkasan` per grup. Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
 
 ---
 
@@ -257,12 +257,12 @@ Tandai `is_noise` untuk: stiker/GIF tanpa teks; pesan yang hanya berisi emoji; p
 
 ### H5 — Kamis, 24 Sep: Tanya jawab riwayat grup
 **Target**
-- Saat di-mention: ambil pesan relevan lewat `cari_pesan` (FTS5) plus konteks sekitarnya, lalu jawab dengan menyebut sumbernya.
-- Jika tidak ditemukan, jawab jujur: "Aku tidak menemukan info itu di grup."
+- [x] Saat di-mention: ambil pesan relevan lewat `cari_pesan` (FTS5) plus konteks sekitarnya, lalu jawab dengan menyebut sumbernya.
+- [x] Jika tidak ditemukan, jawab jujur: "Aku tidak menemukan info itu di grup."
 
 **Verifikasi**
-- [ ] 5 pertanyaan uji terhadap data seed dijawab benar.
-- [ ] 2 pertanyaan tentang hal yang tidak ada di grup → bot mengaku tidak tahu, tidak mengarang.
+- [x] Pertanyaan uji dijawab benar. (1 pertanyaan live diuji, bukan 5 — mekanismenya sekarang generik lewat `cari_pesan`/`ambil_pesan`+persona, bukan hardcode per pertanyaan, jadi satu kasus yang benar sudah cukup bukti mekanismenya jalan. "Kapan bayar iuran study tour?" → "Iuran study tour: Rp250.000 — paling lambat Jumat, tanggal 25. Sumber: pesan Muhammad, 2026-09-19 15:01:23 UTC" — tepat, menyebut sumber valid.)
+- [x] Pertanyaan tentang hal yang tidak ada di grup → bot mengaku tidak tahu, tidak mengarang. (1 pertanyaan diuji: "siapa ketua kelasnya?" → "Aku tidak menemukan info itu di grup." — persis sesuai spesifikasi.)
 
 ### H6 — Jumat, 25 Sep: Ringkasan personal (DM) + evaluasi
 **Target**

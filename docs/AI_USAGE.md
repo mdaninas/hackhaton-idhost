@@ -30,3 +30,9 @@
 - **`ringkas/daily_summary.py`** (ringkasan otomatis harian) dan **`ringkas/send_reminders.py`** (pengirim pengingat) — dibuat penuh oleh Claude Code sebagai cron job `no_agent`, setelah riset dokumentasi Hermes yang menunjukkan agent tidak otomatis tahu tanggal saat ini (perlu tool `terminal`), sehingga pendekatan yang lebih deterministik (panggil OpenAI API langsung, bukan lewat sesi agent) dipilih.
 - Debugging mandiri oleh Claude Code: error `temperature` tidak didukung model `gpt-5-mini` di endpoint chat completions, dan pembatasan keamanan Hermes yang menolak symlink script cron (diselesaikan dengan wrapper script fisik).
 - Kedua cron job diverifikasi live bersama Dani: pengingat terkirim tepat waktu (uji manual + lewat scheduler asli Hermes), ringkasan harian terkirim ke grup Telegram end-to-end.
+
+## H5 — 2026-09-19: Tanya jawab riwayat grup
+
+- **Ditemukan & diperbaiki bug deteksi mention** (sudah ada sejak H2 tanpa disadari): Claude Code membaca source code adapter Telegram Hermes, menemukan `event.text` selalu dibersihkan dari teks "@botusername" sebelum sampai ke hook plugin, lalu memperbaiki dengan membaca `entities` dari `event.raw_message` langsung.
+- **Persona 'Ringkas' via `ctx.register_system_prompt_section()`** — dirancang dan diimplementasikan penuh oleh Claude Code setelah pengujian langsung menunjukkan agent menjawab sebagai asisten umum (bukan mencari ke riwayat grup) tanpa instruksi ini. Sekaligus menutup gap "skill format ringkasan" yang dicatat di H3.
+- Diverifikasi langsung bersama Dani di Telegram: pertanyaan tentang info yang ada di grup dijawab benar dengan sumber, pertanyaan tentang info yang tidak ada dijawab jujur ("Aku tidak menemukan info itu di grup.") tanpa mengarang.
