@@ -32,6 +32,8 @@ from ringkas.db import (  # noqa: E402
     get_or_create_group,
     get_or_create_member,
     insert_message,
+    set_dm_aktif,
+    set_konteks_personal,
     simpan_ringkasan,
     simpan_tenggat_dengan_pengingat,
     tambah_item,
@@ -48,6 +50,8 @@ WIB = timezone(timedelta(hours=7))
 # sama. Untuk skala uji coba single-group hackathon ini cukup aman.
 _LAST_CHAT_ID: str | None = None
 _LAST_CHAT_NAMA: str | None = None
+_LAST_DM_USER_ID: str | None = None
+_LAST_DM_USER_NAMA: str | None = None
 
 
 def _pesan_mention_bot(event) -> bool:
@@ -81,11 +85,17 @@ def _pesan_mention_bot(event) -> bool:
 
 
 def _simpan_pesan_masuk(event, **kwargs):
-    global _LAST_CHAT_ID, _LAST_CHAT_NAMA
+    global _LAST_CHAT_ID, _LAST_CHAT_NAMA, _LAST_DM_USER_ID, _LAST_DM_USER_NAMA
     del kwargs
     source = getattr(event, "source", None)
     if source is None or getattr(source.platform, "value", source.platform) != "telegram":
         return None
+
+    if source.chat_type == "dm":
+        _LAST_DM_USER_ID = str(source.user_id) if source.user_id else None
+        _LAST_DM_USER_NAMA = source.user_name
+        return None  # DM tidak disentuh penyimpanan/mention-gate grup (H6 command /start, /konteks saja)
+
     if source.chat_type not in ("group", "forum"):
         return None
 
@@ -98,9 +108,10 @@ def _simpan_pesan_masuk(event, **kwargs):
 
     if not is_command:
         try:
-            noise = is_noise(teks, jenis=jenis)
             with connect() as conn:
                 group_id = get_or_create_group(conn, str(source.chat_id), source.chat_name)
+                kata_kunci = ambil_pengaturan_grup(conn, group_id=group_id).get("kata_kunci_penting", [])
+                noise = is_noise(teks, jenis=jenis, kata_kunci_penting=kata_kunci)
                 member_id = get_or_create_member(
                     conn, str(source.user_id) if source.user_id else "unknown", source.user_name
                 )
@@ -305,6 +316,31 @@ def _handle_ringkas(raw_args, ctx=None):
     return markdown
 
 
+def _handle_start(raw_args, ctx=None):
+    del raw_args, ctx
+    if not _LAST_DM_USER_ID:
+        return "Perintah ini cuma bisa dipakai di chat pribadi dengan bot."
+    with connect() as conn:
+        set_dm_aktif(conn, telegram_user_id=_LAST_DM_USER_ID, aktif=True)
+    return (
+        "Halo! Ringkasan personal harian lewat DM sudah aktif. Biar makin relevan, "
+        "kasih tau sedikit konteks kamu -- ketik /konteks <cerita singkat>, contoh:\n"
+        "/konteks anak saya ikut study tour dan pramuka"
+    )
+
+
+def _handle_konteks(raw_args, ctx=None):
+    del ctx
+    if not _LAST_DM_USER_ID:
+        return "Perintah ini cuma bisa dipakai di chat pribadi dengan bot."
+    konteks = (raw_args or "").strip()
+    if not konteks:
+        return "Format: /konteks <cerita singkat tentang kamu>. Contoh: /konteks anak saya ikut study tour."
+    with connect() as conn:
+        set_konteks_personal(conn, telegram_user_id=_LAST_DM_USER_ID, konteks=konteks)
+    return f'Oke, konteks kamu sudah disimpan: "{konteks}"'
+
+
 def _persona_ringkas(session_info: dict) -> str:
     """System prompt section: persona 'Ringkas' + aturan Q&A riwayat grup (H5).
 
@@ -326,6 +362,13 @@ def _persona_ringkas(session_info: dict) -> str:
         "JANGAN menawarkan untuk membuatkan pesan ke pihak lain -- tugasmu menjawab langsung dari "
         "data grup. Kalau setelah dicari tidak ketemu, jawab jujur dan singkat: "
         "\"Aku tidak menemukan info itu di grup.\" -- jangan mengarang. "
+        "Kalau ada anggota grup secara eksplisit bilang sesuatu itu penting dan minta diingat "
+        "(mis. \"itu penting, inget ya\", \"jangan dianggap noise kalau soal X\"), WAJIB panggil "
+        f"tool MCP koreksi_penting (chat_id=\"{chat_id}\", kata_kunci=<kata kunci singkatnya>) -- "
+        "JANGAN pakai tool 'memory' bawaan untuk ini, koreksi_penting yang menyimpannya ke "
+        "database ringkasan supaya benar-benar mempengaruhi ringkasan grup berikutnya (tool "
+        "'memory' cuma untuk memori percakapanmu sendiri, tidak dibaca sistem ringkasan). "
+        "Setelah berhasil, konfirmasi singkat ke pengguna. "
         "Balas dalam bahasa Indonesia, singkat dan langsung ke inti."
     )
 
@@ -336,6 +379,16 @@ def register(ctx):
         "ringkas",
         handler=lambda raw_args: _handle_ringkas(raw_args, ctx=ctx),
         description="Buat ringkasan manual pesan grup hari ini",
+    )
+    ctx.register_command(
+        "mulai",
+        handler=_handle_start,
+        description="Aktifkan ringkasan personal lewat DM",
+    )
+    ctx.register_command(
+        "konteks",
+        handler=_handle_konteks,
+        description="Simpan konteks personal untuk ringkasan DM",
     )
     ctx.register_system_prompt_section(
         "ringkas.persona",

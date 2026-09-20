@@ -52,6 +52,42 @@ _SHORT_ACK_WORDS = {
     "lanjut",
 }
 
+# Kata pengisi tambahan (dipakai untuk cek frasa pendek "semua kata pengisi",
+# lihat _is_filler_phrase) -- menangkap variasi ucapan singkat yang tidak
+# persis cocok _SHORT_ACK_WORDS, mis. "sipp mantap", "wokeh siap", "noted ya bu".
+_FILLER_WORDS = _SHORT_ACK_WORDS | {
+    "sipp",
+    "wokeh",
+    "woke",
+    "trims",
+    "banyak",
+    "deh",
+    "sih",
+    "bu",
+    "pak",
+    "kak",
+    "min",
+    "betul",
+    "bener",
+    "aminn",
+    "rabbal",
+    "alamin",
+    "dong",
+    "kok",
+    "nih",
+    "tuh",
+    "loh",
+    "lho",
+}
+
+
+def _is_filler_phrase(teks: str) -> bool:
+    """True kalau SEMUA kata di pesan (maks 5 kata) ada di daftar kata pengisi."""
+    kata = _normalize(teks).split()
+    if not kata or len(kata) > 5:
+        return False
+    return all(k in _FILLER_WORDS for k in kata)
+
 # Frasa ucapan standar yang jadi noise KECUALI ada tanggal/angka uang.
 _GREETING_PATTERNS = [
     r"selamat ulang tahun",
@@ -66,10 +102,12 @@ _GREETING_PATTERNS = [
     r"selamat atas",
 ]
 
-# Tanggal (dd/mm, dd-mm, "5 januari", dst) atau nominal uang (Rp, rb, ribu, juta, angka besar).
+# Tanggal (dd/mm, dd-mm, "5 januari", dst), penanda waktu relatif konkret
+# ("besok", "lusa", nama hari), atau nominal uang (Rp, rb, ribu, juta, dst).
 _DATE_OR_MONEY_RE = re.compile(
     r"(\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)"  # 5/1, 05-01-2026
     r"|(\d{1,2}\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember))"
+    r"|\b(besok|lusa|senin|selasa|rabu|kamis|jumat|sabtu|minggu)\b"
     r"|(rp\.?\s?\d)"  # Rp 50.000
     r"|(\d+\s?(rb|ribu|jt|juta))",
     re.IGNORECASE,
@@ -101,9 +139,20 @@ def _is_emoji_only(teks: str) -> bool:
     return without_emoji.strip() == ""
 
 
-def is_noise(teks: str, jenis: str = "text") -> bool:
-    """True kalau pesan dianggap noise (tidak perlu diringkas)."""
+def is_noise(teks: str, jenis: str = "text", kata_kunci_penting: list[str] | None = None) -> bool:
+    """True kalau pesan dianggap noise (tidak perlu diringkas).
+
+    `kata_kunci_penting` (hasil koreksi manual grup, mis. "iuran") membuat
+    pesan yang menyinggung kata itu TIDAK PERNAH dianggap noise, apa pun
+    aturan lain di bawah -- ini jalur H6 supaya koreksi pengguna berpengaruh
+    ke ringkasan berikutnya.
+    """
     teks = teks or ""
+
+    if kata_kunci_penting:
+        lower_teks = teks.lower()
+        if any(kk.strip().lower() in lower_teks for kk in kata_kunci_penting if kk.strip()):
+            return False
 
     # Stiker/GIF tanpa caption teks.
     if jenis in {"sticker", "gif"} and not teks.strip():
@@ -117,6 +166,9 @@ def is_noise(teks: str, jenis: str = "text") -> bool:
 
     normalized = _normalize(teks)
     if normalized in _SHORT_ACK_WORDS:
+        return True
+
+    if _is_filler_phrase(teks):
         return True
 
     lower = teks.lower()

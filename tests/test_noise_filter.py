@@ -51,3 +51,34 @@ def test_pesan_kosong_non_text_default_noise():
 def test_pesan_kosong_text_bukan_noise_khusus():
     # Teks kosong tapi jenis text (kasus jarang) -> dianggap bukan target noise stiker/gif.
     assert is_noise("", jenis="text") is False
+
+
+def test_kata_kunci_penting_override_noise():
+    # "ok" normalnya noise, tapi kalau menyinggung kata kunci hasil koreksi -> bukan noise.
+    assert is_noise("ok", kata_kunci_penting=["iuran"]) is True
+    assert is_noise("ok soal iuran ya", kata_kunci_penting=["iuran"]) is False
+
+
+def test_kata_kunci_penting_case_insensitive():
+    assert is_noise("🙏", kata_kunci_penting=["IURAN"]) is True
+    assert is_noise("makasih IURAN nya udah dibayar", kata_kunci_penting=["iuran"]) is False
+
+
+def test_kata_kunci_penting_kosong_tidak_berefek():
+    assert is_noise("ok", kata_kunci_penting=[]) is True
+    assert is_noise("ok", kata_kunci_penting=None) is True
+
+
+def test_frasa_pendek_variasi_kata_pengisi_adalah_noise():
+    for teks in ["sipp mantap", "wokeh siap", "noted ya bu", "trims banyak ya", "hehe iya betul"]:
+        assert is_noise(teks) is True, f"'{teks}' harusnya noise (H6: eval/run_eval.py)"
+
+
+def test_frasa_panjang_tidak_disamakan_kata_pengisi():
+    # >5 kata -> tidak dianggap frasa pengisi walau semua kata "familiar".
+    assert is_noise("ya ya ya ya ya ya ya") is False
+
+
+def test_ucapan_dengan_penanda_hari_relatif_bukan_noise():
+    assert is_noise("Selamat pagi semua, jangan lupa besok upacara bendera ya") is False
+    assert is_noise("Selamat pagi, Senin nanti ada acara sekolah") is False

@@ -140,3 +140,27 @@ Hasilnya secara perilaku user **sama persis** dengan target awal (bot diam kecua
 **Verifikasi live:**
 - "kapan bayar iuran study tour?" (setelah `/new` + mention) -> agent panggil `mcp__ringkas__cari_pesan`, jawab: "Iuran study tour: Rp250.000 — paling lambat Jumat, tanggal 25. Sumber: pesan Muhammad, 2026-09-19 15:01:23 UTC." -- benar dan menyebut sumber valid.
 - "siapa ketua kelasnya?" (info yang tidak ada di grup) -> agent panggil `cari_pesan` (hasil kosong), jawab: "Aku tidak menemukan info itu di grup." -- persis sesuai spesifikasi, tidak mengarang.
+
+---
+
+## H6 — 2026-09-19/20: Ringkasan personal DM, koreksi memori, evaluasi
+
+**`/start` bentrok command built-in Hermes.** Ternyata `/start` sudah dipakai Hermes sendiri ("Acknowledge platform start pings without a reply" -- no-op silent ack), jadi registrasi command kita ditolak (`"Plugin 'ringkas' tried to register command '/start' which conflicts with a built-in command. Skipping."`). Diganti jadi `/mulai` (bahasa Indonesia, tidak bentrok).
+
+**DM Dani sempat diblokir total.** Setelah `/mulai` tidak menghasilkan efek apa pun, log menunjukkan `"Blocked unauthorized user 861697558 in chat 861697558"` -- `TELEGRAM_ALLOWED_CHATS`/`GROUP_ALLOWED_CHATS` cuma mengotorisasi grup uji, DM personal (chat_id = user_id sendiri di Telegram) butuh otorisasi terpisah lewat `TELEGRAM_ALLOWED_USERS`. Ditambahkan `TELEGRAM_ALLOWED_USERS=861697558` ke `.env`. Kalau ada anggota grup lain mau pakai fitur DM nanti, id mereka perlu ditambahkan ke variabel ini juga (dicatat di `deploy/README.md`).
+
+**Memori koreksi per grup: pilihan desain (dikonfirmasi bareng Dani).** Dua opsi dipertimbangkan: (a) pakai memori bawaan Hermes, (b) kata kunci di database sendiri. Dipilih (b) karena cron job ringkasan harian (H4) itu `no_agent` -- sama sekali tidak punya akses ke sesi/memori percakapan Hermes, jadi koreksi lewat memori Hermes hanya akan berlaku untuk `/ringkas` manual, bukan ringkasan otomatis jam 20:00. Implementasi: tool MCP baru `koreksi_penting(chat_id, kata_kunci)` menambah ke kolom `kata_kunci_penting` grup (sudah ada sejak skema H2), dipakai `noise_filter.is_noise()` di SEMUA jalur (plugin hook, MCP `simpan_pesan`) supaya konsisten.
+
+**Bug: agent pakai tool `memory` bawaan, bukan `koreksi_penting`.** Percobaan pertama, instruksi persona bilang "panggil koreksi_penting" tapi model malah pilih tool `memory` generik Hermes (tersimpan di sistem memori Hermes sendiri, tidak pernah dibaca `noise_filter`/ringkasan -- jadi TIDAK ADA EFEK ke ringkasan berikutnya, padahal user mengira sudah "diingat"). Fix: instruksi persona diperjelas eksplisit "JANGAN pakai tool 'memory' bawaan untuk ini" + jelaskan bedanya. Setelah fix, model konsisten pakai `koreksi_penting`.
+
+**Konteks personal DM: keputusan desain (dikonfirmasi bareng Dani).** Dipilih command eksplisit `/konteks <teks>` (bukan ekstraksi otomatis dari obrolan) -- lebih deterministik, gampang diuji, tidak perlu panggilan LLM tambahan tiap DM.
+
+**Ringkasan personal DM (`ringkas/dm_summary.py`):** cron job `no_agent` lain (pola sama seperti `daily_summary.py`/`send_reminders.py` di H4 -- baca kredensial dari `.env` langsung, panggil OpenAI langsung, kirim via Telegram Bot API langsung), jalan jam 20:05 WIB (5 menit setelah ringkasan grup). Untuk tiap grup aktif: ambil anggota yang `dm_aktif=1` (lewat `anggota_grup_dm_aktif()` -- didapat dari histori pengirim pesan di grup itu, member TIDAK punya kolom group_id langsung), lalu satu panggilan LLM per orang yang menyorot bagian relevan dengan `konteks_personal` mereka.
+
+**Evaluasi (`eval/seed_group.py` + `eval/run_eval.py`):** lihat `docs/EVAL.md` untuk detail lengkap. Ringkas: recall & precision 100% pada 260 pesan seed (setelah 2 perbaikan `noise_filter.py` yang dipicu temuan evaluasi ini sendiri -- lihat `noise_filter.py`'s `_is_filler_phrase()` dan perluasan `_DATE_OR_MONEY_RE` untuk "besok"/nama hari). **Cakupannya cuma rule-based noise filter**, bukan akurasi ekstraksi item LLM -- lihat bagian "Keterbatasan" di `docs/EVAL.md` untuk kejujuran soal apa yang belum tercakup.
+
+**Verifikasi:**
+- `/mulai` + `/konteks anak saya ikut study tour dan pramuka` di DM -> `members.dm_aktif=1`, `konteks_personal` tersimpan benar.
+- Koreksi "itu penting ya, tolong diingat soal pramuka" -> `koreksi_penting` terpanggil, `kata_kunci_penting=["pramuka"]` di grup. Pesan berikutnya "ok soal pramuka" (normalnya noise) tersimpan `is_noise=0`.
+- `dm_summary.py` dites manual: ringkasan personal masuk ke DM Dani, secara nyata menyorot info yang berkaitan dengan konteks "pramuka" yang disimpan.
+- Evaluasi: recall 100%, precision 100% (260 pesan seed, 21 berlabel penting) -- lolos gerbang H7.

@@ -426,3 +426,39 @@ def ambil_pengaturan_grup(conn: sqlite3.Connection, *, group_id: int) -> dict:
         "retensi_hari": row["retensi_hari"],
         "aktif": bool(row["aktif"]),
     }
+
+
+def tambah_kata_kunci_penting(conn: sqlite3.Connection, *, group_id: int, kata_kunci: str) -> list[str]:
+    """Tambah satu kata kunci ke daftar 'penting' grup (dedupe, case-insensitive). Return daftar terbaru."""
+    row = conn.execute("SELECT kata_kunci_penting FROM groups WHERE id = ?", (group_id,)).fetchone()
+    daftar = json.loads(row["kata_kunci_penting"]) if row else []
+    kata_kunci = kata_kunci.strip()
+    if kata_kunci and kata_kunci.lower() not in [k.lower() for k in daftar]:
+        daftar.append(kata_kunci)
+        conn.execute("UPDATE groups SET kata_kunci_penting = ? WHERE id = ?", (json.dumps(daftar), group_id))
+    return daftar
+
+
+def set_konteks_personal(conn: sqlite3.Connection, *, telegram_user_id: str, konteks: str) -> None:
+    """Simpan/timpa konteks personal seorang member (dipakai untuk ringkasan DM)."""
+    member_id = get_or_create_member(conn, telegram_user_id)
+    conn.execute("UPDATE members SET konteks_personal = ? WHERE id = ?", (konteks, member_id))
+
+
+def set_dm_aktif(conn: sqlite3.Connection, *, telegram_user_id: str, aktif: bool = True) -> None:
+    """Tandai member mengaktifkan (atau menonaktifkan) ringkasan personal lewat DM."""
+    member_id = get_or_create_member(conn, telegram_user_id)
+    conn.execute("UPDATE members SET dm_aktif = ? WHERE id = ?", (int(aktif), member_id))
+
+
+def anggota_grup_dm_aktif(conn: sqlite3.Connection, *, group_id: int) -> list[sqlite3.Row]:
+    """Member grup ini yang pernah kirim pesan DAN sudah mengaktifkan DM (/start)."""
+    return conn.execute(
+        """
+        SELECT DISTINCT mem.telegram_user_id, mem.nama_tampilan, mem.konteks_personal
+        FROM members mem
+        JOIN messages m ON m.sender_id = mem.id
+        WHERE m.group_id = ? AND mem.dm_aktif = 1
+        """,
+        (group_id,),
+    ).fetchall()

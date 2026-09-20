@@ -37,6 +37,15 @@ hermes cron create "every 5m" --no-agent --script ringkas_send_reminders.py \
 
 hermes cron create "0 13 * * *" --no-agent --script ringkas_daily_summary.py \
   --deliver local --name "ringkas-daily-summary"
+
+hermes cron create "5 13 * * *" --no-agent --script ringkas_dm_summary.py \
+  --deliver local --name "ringkas-dm-summary"
 ```
 
-(`0 13 * * *` = jam 20:00 WIB, karena VPS ini pakai UTC.)
+(`0 13 * * *` = jam 20:00 WIB, `5 13 * * *` = 20:05 WIB, karena VPS ini pakai UTC.)
+
+## Allowlist DM personal (H6)
+
+`/mulai` dan `/konteks` di DM cuma bisa dipakai user yang ada di
+`TELEGRAM_ALLOWED_USERS` (di `.env`) -- tambahkan `telegram_user_id` tiap
+pengguna baru yang mau pakai fitur DM ke variabel itu (pisah koma).

@@ -8,6 +8,7 @@ from ringkas.db import (
     ambil_pengaturan_grup,
     ambil_pengingat_jatuh_tempo,
     ambil_pesan,
+    anggota_grup_dm_aktif,
     cari_pesan,
     daftar_tenggat,
     get_or_create_group,
@@ -15,6 +16,9 @@ from ringkas.db import (
     init_db,
     insert_message,
     pesan_ids_valid,
+    set_dm_aktif,
+    set_konteks_personal,
+    tambah_kata_kunci_penting,
     simpan_ringkasan,
     simpan_tenggat_dengan_pengingat,
     tambah_item,
@@ -240,3 +244,39 @@ def test_daftar_tenggat(conn):
     daftar = daftar_tenggat(conn, group_id=gid)
     assert len(daftar) == 1
     assert daftar[0]["judul"] == "Bayar iuran"
+
+
+def test_tambah_kata_kunci_penting_dedupe(conn):
+    gid = get_or_create_group(conn, "-100123")
+    d1 = tambah_kata_kunci_penting(conn, group_id=gid, kata_kunci="iuran")
+    assert d1 == ["iuran"]
+    d2 = tambah_kata_kunci_penting(conn, group_id=gid, kata_kunci="Iuran")  # beda kapital, harusnya dedupe
+    assert d2 == ["iuran"]
+    d3 = tambah_kata_kunci_penting(conn, group_id=gid, kata_kunci="study tour")
+    assert d3 == ["iuran", "study tour"]
+    pengaturan = ambil_pengaturan_grup(conn, group_id=gid)
+    assert pengaturan["kata_kunci_penting"] == ["iuran", "study tour"]
+
+
+def test_set_konteks_personal_dan_dm_aktif(conn):
+    set_konteks_personal(conn, telegram_user_id="861697558", konteks="anaknya ikut pramuka")
+    set_dm_aktif(conn, telegram_user_id="861697558", aktif=True)
+    row = conn.execute(
+        "SELECT konteks_personal, dm_aktif FROM members WHERE telegram_user_id = ?", ("861697558",)
+    ).fetchone()
+    assert row["konteks_personal"] == "anaknya ikut pramuka"
+    assert row["dm_aktif"] == 1
+
+
+def test_anggota_grup_dm_aktif(conn):
+    gid = get_or_create_group(conn, "-100123")
+    mid1 = get_or_create_member(conn, "861697558", "Muhammad")
+    mid2 = get_or_create_member(conn, "999", "Lain")
+    insert_message(conn, group_id=gid, telegram_msg_id="1", sender_id=mid1, teks="halo")
+    insert_message(conn, group_id=gid, telegram_msg_id="2", sender_id=mid2, teks="hai")
+    set_dm_aktif(conn, telegram_user_id="861697558", aktif=True)
+    # mid2 tidak set dm_aktif -> tidak boleh muncul
+
+    anggota = anggota_grup_dm_aktif(conn, group_id=gid)
+    assert len(anggota) == 1
+    assert anggota[0]["telegram_user_id"] == "861697558"

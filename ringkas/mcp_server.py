@@ -25,6 +25,7 @@ from ringkas.db import (
     simpan_ringkasan as _simpan_ringkasan,
     simpan_tenggat_dengan_pengingat,
     tambah_item,
+    tambah_kata_kunci_penting,
 )
 from ringkas.noise_filter import is_noise
 
@@ -55,9 +56,10 @@ def simpan_pesan(
     Returns:
         dict berisi message_id (di database) dan is_noise.
     """
-    noise = is_noise(teks, jenis=jenis)
     with connect() as conn:
         group_id = get_or_create_group(conn, chat_id)
+        kata_kunci = _ambil_pengaturan_grup(conn, group_id=group_id).get("kata_kunci_penting", [])
+        noise = is_noise(teks, jenis=jenis, kata_kunci_penting=kata_kunci)
         member_id = get_or_create_member(conn, sender_id, sender_nama or None)
         message_id = insert_message(
             conn,
@@ -258,6 +260,28 @@ def ambil_pengaturan_grup(chat_id: str) -> dict:
     with connect() as conn:
         group_id = get_or_create_group(conn, chat_id)
         return _ambil_pengaturan_grup(conn, group_id=group_id)
+
+
+@mcp.tool()
+def koreksi_penting(chat_id: str, kata_kunci: str) -> dict:
+    """Catat koreksi: pesan yang menyinggung kata kunci ini SELALU dianggap penting.
+
+    Panggil tool ini kalau seorang anggota grup secara eksplisit bilang sesuatu
+    itu penting dan minta diingat (mis. "itu penting, inget ya", "jangan
+    dianggap noise ya kalau soal X"). Efeknya berlaku untuk pesan BERIKUTNYA
+    (bukan ringkasan yang sudah dibuat sebelumnya).
+
+    Args:
+        chat_id: Telegram chat ID grup.
+        kata_kunci: Kata/frasa yang harus selalu dianggap penting (mis. "iuran", "study tour").
+
+    Returns:
+        dict berisi daftar kata_kunci_penting grup ini setelah update.
+    """
+    with connect() as conn:
+        group_id = get_or_create_group(conn, chat_id)
+        daftar = tambah_kata_kunci_penting(conn, group_id=group_id, kata_kunci=kata_kunci)
+    return {"kata_kunci_penting": daftar}
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1562 @@
+[
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 0
+  },
+  {
+    "teks": "wkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 1
+  },
+  {
+    "teks": "hehe",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 2
+  },
+  {
+    "teks": "ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 3
+  },
+  {
+    "teks": "Bayar SPP bulan ini paling lambat tanggal 10",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 4
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 5
+  },
+  {
+    "teks": "Met ultah ya!",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 6
+  },
+  {
+    "teks": "wkwkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 7
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 8
+  },
+  {
+    "teks": "Iuran kelas bulan ini 50.000, ditagih paling lambat Jumat",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 9
+  },
+  {
+    "teks": "noted ya bu",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 10
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 11
+  },
+  {
+    "teks": "Ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 12
+  },
+  {
+    "teks": "Met ultah ya!",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 13
+  },
+  {
+    "teks": "siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 14
+  },
+  {
+    "teks": "Ada razia gigi berlubang hari Rabu, bawa sikat gigi",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 15
+  },
+  {
+    "teks": "oke deh",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 16
+  },
+  {
+    "teks": "wokeh siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 17
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 18
+  },
+  {
+    "teks": "Selamat pagi semuanya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 19
+  },
+  {
+    "teks": "🔥",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 20
+  },
+  {
+    "teks": "😅",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 21
+  },
+  {
+    "teks": "PR matematika halaman 25-27 dikumpul hari Kamis",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 22
+  },
+  {
+    "teks": "ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 23
+  },
+  {
+    "teks": "hehe",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 24
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 25
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 26
+  },
+  {
+    "teks": "gas",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 27
+  },
+  {
+    "teks": "😅",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 28
+  },
+  {
+    "teks": "hehe",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 29
+  },
+  {
+    "teks": "wkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 30
+  },
+  {
+    "teks": "noted ya bu",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 31
+  },
+  {
+    "teks": "SIAP",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 32
+  },
+  {
+    "teks": "aminn ya rabbal alamin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 33
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 34
+  },
+  {
+    "teks": "🙏",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 35
+  },
+  {
+    "teks": "wkwkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 36
+  },
+  {
+    "teks": "👏👏",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 37
+  },
+  {
+    "teks": "SIAP",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 38
+  },
+  {
+    "teks": "siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 39
+  },
+  {
+    "teks": "SIAP",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 40
+  },
+  {
+    "teks": "wkwkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 41
+  },
+  {
+    "teks": "wokeh siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 42
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 43
+  },
+  {
+    "teks": "Rapat wali murid hari Sabtu jam 9 pagi di aula sekolah",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 44
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 45
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 46
+  },
+  {
+    "teks": "hehe",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 47
+  },
+  {
+    "teks": "wkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 48
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 49
+  },
+  {
+    "teks": "ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 50
+  },
+  {
+    "teks": "hehe iya betul",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 51
+  },
+  {
+    "teks": "lanjut",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 52
+  },
+  {
+    "teks": "Ekskul pramuka pindah jadwal jadi hari Jumat",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 53
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 54
+  },
+  {
+    "teks": "ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 55
+  },
+  {
+    "teks": "",
+    "jenis": "gif",
+    "label_penting": false,
+    "index": 56
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 57
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 58
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 59
+  },
+  {
+    "teks": "SIAP",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 60
+  },
+  {
+    "teks": "wkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 61
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 62
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 63
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 64
+  },
+  {
+    "teks": "Besok libur karena tanggal merah",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 65
+  },
+  {
+    "teks": "Selamat malam",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 66
+  },
+  {
+    "teks": "noted ya bu",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 67
+  },
+  {
+    "teks": "❤️",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 68
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 69
+  },
+  {
+    "teks": "Selamat pagi semuanya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 70
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 71
+  },
+  {
+    "teks": "noted ya bu",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 72
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 73
+  },
+  {
+    "teks": "👏👏",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 74
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 75
+  },
+  {
+    "teks": "wkwkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 76
+  },
+  {
+    "teks": "❤️",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 77
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 78
+  },
+  {
+    "teks": "Selamat pagi semuanya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 79
+  },
+  {
+    "teks": "noted ya bu",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 80
+  },
+  {
+    "teks": "Bu Dewi jadi koordinator acara perpisahan, sudah disepakati semua",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 81
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 82
+  },
+  {
+    "teks": "siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 83
+  },
+  {
+    "teks": "🙏",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 84
+  },
+  {
+    "teks": "hehe iya betul",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 85
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 86
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 87
+  },
+  {
+    "teks": "wkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 88
+  },
+  {
+    "teks": "ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 89
+  },
+  {
+    "teks": "Baju olahraga dipakai hari Selasa dan Kamis",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 90
+  },
+  {
+    "teks": "hehe iya betul",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 91
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 92
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 93
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 94
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 95
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 96
+  },
+  {
+    "teks": "😂😂😂",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 97
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 98
+  },
+  {
+    "teks": "❤️",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 99
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 100
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 101
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 102
+  },
+  {
+    "teks": "🔥",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 103
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 104
+  },
+  {
+    "teks": "Ada yang tau jam berapa pulangnya kalau study tour?",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 105
+  },
+  {
+    "teks": "hehe",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 106
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 107
+  },
+  {
+    "teks": "oke deh",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 108
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 109
+  },
+  {
+    "teks": "Selamat malam",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 110
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 111
+  },
+  {
+    "teks": "Ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 112
+  },
+  {
+    "teks": "ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 113
+  },
+  {
+    "teks": "Selamat pagi semuanya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 114
+  },
+  {
+    "teks": "😂😂😂",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 115
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 116
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 117
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 118
+  },
+  {
+    "teks": "noted ya bu",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 119
+  },
+  {
+    "teks": "ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 120
+  },
+  {
+    "teks": "sip",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 121
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 122
+  },
+  {
+    "teks": "Ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 123
+  },
+  {
+    "teks": "Oke jadi sudah disepakati study tour ke Kebun Binatang ya bu/pak",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 124
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 125
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 126
+  },
+  {
+    "teks": "❤️",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 127
+  },
+  {
+    "teks": "Met ultah ya!",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 128
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 129
+  },
+  {
+    "teks": "wkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 130
+  },
+  {
+    "teks": "ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 131
+  },
+  {
+    "teks": "SIAP",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 132
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 133
+  },
+  {
+    "teks": "",
+    "jenis": "sticker",
+    "label_penting": false,
+    "index": 134
+  },
+  {
+    "teks": "😅",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 135
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 136
+  },
+  {
+    "teks": "hehe iya betul",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 137
+  },
+  {
+    "teks": "🔥",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 138
+  },
+  {
+    "teks": "👏👏",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 139
+  },
+  {
+    "teks": "oke deh",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 140
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 141
+  },
+  {
+    "teks": "😅",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 142
+  },
+  {
+    "teks": "lanjut",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 143
+  },
+  {
+    "teks": "wokeh siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 144
+  },
+  {
+    "teks": "wkwkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 145
+  },
+  {
+    "teks": "Uang kas kelas sudah terkumpul 2 juta, dipakai untuk apa ya?",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 146
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 147
+  },
+  {
+    "teks": "Selamat malam",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 148
+  },
+  {
+    "teks": "Foto kelas untuk buku tahunan hari Senin depan, pakai seragam batik",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 149
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 150
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 151
+  },
+  {
+    "teks": "hehe iya betul",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 152
+  },
+  {
+    "teks": "Met ultah ya!",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 153
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 154
+  },
+  {
+    "teks": "hehe iya betul",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 155
+  },
+  {
+    "teks": "",
+    "jenis": "sticker",
+    "label_penting": false,
+    "index": 156
+  },
+  {
+    "teks": "SIAP",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 157
+  },
+  {
+    "teks": "Selamat malam",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 158
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 159
+  },
+  {
+    "teks": "Besok Senin upacara bendera, anak-anak pakai seragam lengkap ya",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 160
+  },
+  {
+    "teks": "Vaksinasi booster untuk anak kelas 3 tanggal 20, bawa kartu vaksin",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 161
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 162
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 163
+  },
+  {
+    "teks": "🙏",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 164
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 165
+  },
+  {
+    "teks": "Siapa yang jadi among tamu di acara perpisahan?",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 166
+  },
+  {
+    "teks": "lanjut",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 167
+  },
+  {
+    "teks": "aminn ya rabbal alamin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 168
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 169
+  },
+  {
+    "teks": "❤️",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 170
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 171
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 172
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 173
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 174
+  },
+  {
+    "teks": "😅",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 175
+  },
+  {
+    "teks": "hehe",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 176
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 177
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 178
+  },
+  {
+    "teks": "noted",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 179
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 180
+  },
+  {
+    "teks": "",
+    "jenis": "sticker",
+    "label_penting": false,
+    "index": 181
+  },
+  {
+    "teks": "lanjut",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 182
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 183
+  },
+  {
+    "teks": "wkwkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 184
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 185
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 186
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 187
+  },
+  {
+    "teks": "hehe",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 188
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 189
+  },
+  {
+    "teks": "trims banyak ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 190
+  },
+  {
+    "teks": "ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 191
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 192
+  },
+  {
+    "teks": "😅",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 193
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 194
+  },
+  {
+    "teks": "gas",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 195
+  },
+  {
+    "teks": "wkwkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 196
+  },
+  {
+    "teks": "wokeh siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 197
+  },
+  {
+    "teks": "Selamat pagi semuanya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 198
+  },
+  {
+    "teks": "Met ultah ya!",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 199
+  },
+  {
+    "teks": "🙏",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 200
+  },
+  {
+    "teks": "",
+    "jenis": "gif",
+    "label_penting": false,
+    "index": 201
+  },
+  {
+    "teks": "🔥",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 202
+  },
+  {
+    "teks": "wokeh siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 203
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 204
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 205
+  },
+  {
+    "teks": "👏👏",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 206
+  },
+  {
+    "teks": "ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 207
+  },
+  {
+    "teks": "SIAP",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 208
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 209
+  },
+  {
+    "teks": "ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 210
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 211
+  },
+  {
+    "teks": "",
+    "jenis": "sticker",
+    "label_penting": false,
+    "index": 212
+  },
+  {
+    "teks": "Study tour ke Kebun Binatang tanggal 15 Oktober, biaya 150rb per anak",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 213
+  },
+  {
+    "teks": "Pembagian rapor tanggal 22 Desember jam 8 pagi",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 214
+  },
+  {
+    "teks": "❤️",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 215
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 216
+  },
+  {
+    "teks": "wkwk",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 217
+  },
+  {
+    "teks": "yoi",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 218
+  },
+  {
+    "teks": "oke deh",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 219
+  },
+  {
+    "teks": "Selamat pagi semuanya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 220
+  },
+  {
+    "teks": "hehe",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 221
+  },
+  {
+    "teks": "Met ultah ya!",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 222
+  },
+  {
+    "teks": "haha",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 223
+  },
+  {
+    "teks": "aamiin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 224
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 225
+  },
+  {
+    "teks": "Ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 226
+  },
+  {
+    "teks": "lanjut",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 227
+  },
+  {
+    "teks": "Selamat pagi semuanya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 228
+  },
+  {
+    "teks": "siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 229
+  },
+  {
+    "teks": "",
+    "jenis": "sticker",
+    "label_penting": false,
+    "index": 230
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 231
+  },
+  {
+    "teks": "lanjut",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 232
+  },
+  {
+    "teks": "ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 233
+  },
+  {
+    "teks": "aminn ya rabbal alamin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 234
+  },
+  {
+    "teks": "ya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 235
+  },
+  {
+    "teks": "Selamat pagi semua, jangan lupa besok upacara bendera ya",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 236
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 237
+  },
+  {
+    "teks": "Sudah diputuskan uang kas dipakai buat acara perpisahan",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 238
+  },
+  {
+    "teks": "",
+    "jenis": "sticker",
+    "label_penting": false,
+    "index": 239
+  },
+  {
+    "teks": "aminn ya rabbal alamin",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 240
+  },
+  {
+    "teks": "😅",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 241
+  },
+  {
+    "teks": "sip",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 242
+  },
+  {
+    "teks": "iya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 243
+  },
+  {
+    "teks": "SIAP",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 244
+  },
+  {
+    "teks": "siap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 245
+  },
+  {
+    "teks": "sip",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 246
+  },
+  {
+    "teks": "Selamat pagi semuanya",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 247
+  },
+  {
+    "teks": "lanjut",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 248
+  },
+  {
+    "teks": "😂😂😂",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 249
+  },
+  {
+    "teks": "",
+    "jenis": "sticker",
+    "label_penting": false,
+    "index": 250
+  },
+  {
+    "teks": "Ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 251
+  },
+  {
+    "teks": "Kapan pembagian rapor semester ini?",
+    "jenis": "text",
+    "label_penting": true,
+    "index": 252
+  },
+  {
+    "teks": "sip",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 253
+  },
+  {
+    "teks": "makasih",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 254
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 255
+  },
+  {
+    "teks": "sipp mantap",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 256
+  },
+  {
+    "teks": "👍",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 257
+  },
+  {
+    "teks": "",
+    "jenis": "gif",
+    "label_penting": false,
+    "index": 258
+  },
+  {
+    "teks": "ok",
+    "jenis": "text",
+    "label_penting": false,
+    "index": 259
+  }
+]

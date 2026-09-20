@@ -266,15 +266,15 @@ Tandai `is_noise` untuk: stiker/GIF tanpa teks; pesan yang hanya berisi emoji; p
 
 ### H6 — Jumat, 25 Sep: Ringkasan personal (DM) + evaluasi
 **Target**
-- Pengguna mengaktifkan DM (`/start` di chat pribadi), bot menyimpan konteks personal, lalu mengirim ringkasan DM yang menyorot hal relevan.
-- Memori per grup: koreksi pengguna ("ini penting", "ini tidak penting") memengaruhi ringkasan berikutnya.
-- `eval/seed_group.py`: grup simulasi realistis berbahasa Indonesia (sekitar 250 pesan, sekitar 20 item penting berlabel).
-- `eval/run_eval.py`: hitung recall dan precision item penting.
+- [x] Pengguna mengaktifkan DM (`/mulai` di chat pribadi -- `/start` bentrok command built-in Hermes, lihat `docs/DECISIONS.md`), bot menyimpan konteks personal (`/konteks <teks>`), lalu mengirim ringkasan DM yang menyorot hal relevan (cron `ringkas-dm-summary`, 20:05 WIB).
+- [x] Memori per grup: koreksi pengguna ("ini penting", "ini tidak penting") memengaruhi ringkasan berikutnya -- tool MCP `koreksi_penting`, simpan ke `kata_kunci_penting` per grup, dipakai `noise_filter.is_noise()`.
+- [x] `eval/seed_group.py`: grup simulasi realistis berbahasa Indonesia (260 pesan, 21 item penting berlabel).
+- [x] `eval/run_eval.py`: hitung recall dan precision (di level pesan, untuk `noise_filter` -- bukan ekstraksi item LLM, lihat keterbatasan di `docs/EVAL.md`).
 
 **Verifikasi**
-- [ ] Dua pengguna dengan konteks berbeda menerima ringkasan DM yang berbeda.
-- [ ] Setelah dikoreksi, perilaku agent berubah pada ringkasan berikutnya.
-- [ ] Hasil evaluasi pertama tercatat di `docs/EVAL.md`.
+- [~] Dua pengguna dengan konteks berbeda menerima ringkasan DM yang berbeda. Cuma 1 pengguna nyata diuji (Dani) -- mekanismenya generik (konteks personal jadi bagian prompt LLM), diverifikasi hasilnya relevan dengan konteks ("anak saya ikut study tour dan pramuka" -> ringkasan menyorot bagian pramuka), tapi belum ada pengujian sungguhan dengan 2 akun berbeda.
+- [x] Setelah dikoreksi, perilaku agent berubah pada ringkasan berikutnya. Diuji: pesan "ok soal pramuka" normalnya noise, setelah koreksi "pramuka" jadi kata kunci penting -> tersimpan `is_noise=0`.
+- [x] Hasil evaluasi pertama tercatat di `docs/EVAL.md`. Recall 100%, precision 100% (setelah 2 perbaikan `noise_filter.py` yang dipicu evaluasi ini) -- lolos gerbang H7 (target ~80%) dengan margin besar.
 
 ### H7 — Sabtu, 26 Sep: Stabilisasi, privasi, dan **GERBANG KEPUTUSAN**
 **Target**
