@@ -73,6 +73,7 @@ deploy/              # panduan deploy manual + wrapper script cron
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — keputusan arsitektur & bug yang ditemukan/diperbaiki
 - [`docs/EVAL.md`](docs/EVAL.md) — hasil evaluasi recall/precision
 - [`docs/AI_USAGE.md`](docs/AI_USAGE.md) — transparansi penggunaan Claude Code
+- [Storyboard video demo](https://claude.ai/artifact/XBBsFzvoi66Vdin4NtzJvw) — skrip 8 adegan + narasi siap-salin untuk TTS (Claude Artifact, privat -- minta akses ke Dani kalau perlu)
 
 ## Keterbatasan & Rencana Lanjutan
 
