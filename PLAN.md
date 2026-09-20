@@ -8,10 +8,10 @@
 
 > Diperbarui oleh Claude Code setiap kali satu hari selesai atau ada keputusan penting.
 
-- **Hari berjalan:** H5 (selesai)
+- **Hari berjalan:** H7 (selesai)
 - **Arsitektur:** Plan A dipilih — Hermes memegang bot Telegram sepenuhnya, tapi logika "simpan semua pesan + diam kecuali di-mention" dipindah ke plugin Hermes sendiri (`hermes/plugins/ringkas/`), bukan fitur observe bawaan Hermes yang ternyata tidak bisa diintersep. Lihat `docs/DECISIONS.md`.
-- **Gerbang H7 (dashboard):** belum dievaluasi
-- **Catatan terakhir:** Q&A riwayat grup jalan lewat persona plugin (`ctx.register_system_prompt_section`) yang mewajibkan agent panggil `cari_pesan`/`ambil_pesan` sebelum jawab pertanyaan tentang grup, dan mengakui tidak tahu kalau tidak ketemu — ini sekaligus menutup gap skill/format dari H3 (`ringkas.persona` section). Bug penting ditemukan & diperbaiki di H5: deteksi mention di plugin sebelumnya tidak pernah jalan karena Hermes menghapus teks "@botusername" dari `event.text` sebelum hook kita fire — sekarang baca dari `event.raw_message` entities langsung. 25 unit test lulus. Gap: ringkasan harian masih hardcode jam yang sama untuk semua grup (H4), belum baca `jam_ringkasan` per grup. Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
+- **Gerbang H7 (dashboard):** ✅ LANJUT ke H8 — recall evaluasi 100%, fitur stabil, dikonfirmasi Dani.
+- **Catatan terakhir:** Gateway sekarang systemd service (tahan reboot, diuji nyata). Privasi: `/hapusdata` (admin-only, 2 langkah konfirmasi), pesan perkenalan grup, retensi data otomatis -- semua diverifikasi live. Bug ditemukan & diperbaiki: allowlist Telegram `"*"` cuma jalan untuk user bukan grup/chat (dicek langsung ke source code). Grup & DM sekarang terbuka untuk siapa saja (bukan cuma grup/user uji), sesuai desain multi-grup. 36 unit test lulus. Gap yang masih terbuka: ringkasan harian hardcode jam sama untuk semua grup, cuma 1 pengguna nyata diuji untuk fitur DM, evaluasi baru menguji `noise_filter` bukan akurasi ekstraksi item LLM, pesan perkenalan grup adalah proxy (pesan pertama terlihat) bukan event join asli. Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
 
 ---
 
@@ -278,16 +278,18 @@ Tandai `is_noise` untuk: stiker/GIF tanpa teks; pesan yang hanya berisi emoji; p
 
 ### H7 — Sabtu, 26 Sep: Stabilisasi, privasi, dan **GERBANG KEPUTUSAN**
 **Target**
-- Pesan perkenalan saat bot masuk grup, `/hapusdata` (khusus admin), job retensi data.
-- Perbaiki bug dari uji coba grup nyata, lalu jalankan ulang evaluasi.
-- Pasang semua komponen sebagai systemd service agar tetap hidup setelah reboot.
+- [x] Pesan perkenalan saat bot masuk grup (proxy: dipicu saat pesan pertama grup terlihat, Hermes tidak expose event "bot ditambahkan" -- lihat `docs/DECISIONS.md`), `/hapusdata` (khusus admin, 2 langkah konfirmasi), job retensi data (`ringkas-retensi`, harian).
+- [x] Perbaiki bug dari uji coba grup nyata (2 bug allowlist Telegram ditemukan & diperbaiki saat H7 -- lihat `docs/DECISIONS.md`), evaluasi dijalankan ulang: masih 100%/100%.
+- [x] Pasang semua komponen sebagai systemd service agar tetap hidup setelah reboot -- **diuji dengan reboot VPS sungguhan**, service auto-start tanpa campur tangan manual.
 
 **GERBANG:** jika fitur H3–H6 **belum stabil**, lewati dashboard. Sebagai gantinya, buat perintah `/statistik` di chat, lalu langsung lompat ke H9.
 
 **Verifikasi**
-- [ ] VPS di-reboot → semua service hidup kembali.
-- [ ] `/hapusdata` benar-benar menghapus data grup.
-- [ ] Recall pada evaluasi mencapai sekitar 80% atau lebih (jika belum, perbaiki prompt/skill dulu, jangan ke dashboard).
+- [x] VPS di-reboot → semua service hidup kembali. Diuji nyata: boot 12:32:43, service auto-start 12:32:57, Telegram reconnect otomatis.
+- [x] `/hapusdata` benar-benar menghapus data grup. Diuji live di grup terpisah: pesan perkenalan -> peringatan tanpa konfirmasi -> hapus permanen setelah `/hapusdata konfirmasi`, grup hilang dari database.
+- [x] Recall pada evaluasi mencapai sekitar 80% atau lebih. 100%/100% (260 pesan seed), jauh di atas target.
+
+**Keputusan gerbang:** lihat `docs/DECISIONS.md` bagian H7.
 
 ### H8 — Minggu, 27 Sep: Dashboard minimal
 **Target** (hanya jika lolos gerbang H7)

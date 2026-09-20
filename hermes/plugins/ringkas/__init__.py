@@ -31,6 +31,7 @@ from ringkas.db import (  # noqa: E402
     connect,
     get_or_create_group,
     get_or_create_member,
+    hapus_data_grup,
     insert_message,
     set_dm_aktif,
     set_konteks_personal,
@@ -39,6 +40,7 @@ from ringkas.db import (  # noqa: E402
     tambah_item,
 )
 from ringkas.noise_filter import is_noise  # noqa: E402
+from ringkas.telegram_client import baca_bot_token, is_group_admin, kirim_pesan  # noqa: E402
 
 BOT_USERNAME = os.environ.get("RINGKAS_BOT_USERNAME", "ringkasgrup_bot")
 WIB = timezone(timedelta(hours=7))
@@ -50,6 +52,7 @@ WIB = timezone(timedelta(hours=7))
 # sama. Untuk skala uji coba single-group hackathon ini cukup aman.
 _LAST_CHAT_ID: str | None = None
 _LAST_CHAT_NAMA: str | None = None
+_LAST_SENDER_ID: str | None = None
 _LAST_DM_USER_ID: str | None = None
 _LAST_DM_USER_NAMA: str | None = None
 
@@ -84,8 +87,34 @@ def _pesan_mention_bot(event) -> bool:
     return False
 
 
+def _kirim_perkenalan(chat_id: str) -> None:
+    """Pesan perkenalan pertama kali grup terdeteksi (H7: transparansi data).
+
+    Catatan implementasi: Hermes tidak expose event Telegram "bot ditambahkan
+    ke grup" (new_chat_member) ke plugin, jadi ini dipicu saat PESAN PERTAMA
+    dari grup itu terlihat -- proxy yang cukup dekat untuk kasus normal (bot
+    baru ditambahkan, langsung ada obrolan), tapi bukan literally "saat
+    join" kalau grup sempat diam lama sebelum pesan pertama tercatat.
+    """
+    try:
+        token = baca_bot_token()
+        kirim_pesan(
+            token,
+            chat_id,
+            "👋 Halo! Aku Ringkas, asisten peringkas grup ini.\n\n"
+            "Aku membaca pesan grup untuk bikin ringkasan harian, mendeteksi tenggat, "
+            "dan jawab pertanyaan soal riwayat grup kalau di-mention. Pesan mentah "
+            "disimpan sementara (default 7 hari) lalu otomatis dihapus -- ringkasannya "
+            "tetap disimpan. Mention aku (@" + BOT_USERNAME + ") kapan aja kalau ada "
+            "pertanyaan, atau admin grup bisa ketik /hapusdata untuk hapus semua data "
+            "grup ini kapan saja.",
+        )
+    except Exception as exc:  # pragma: no cover - jangan sampai gagal kirim intro nge-block simpan pesan
+        print(f"[ringkas] gagal kirim perkenalan: {exc}", flush=True)
+
+
 def _simpan_pesan_masuk(event, **kwargs):
-    global _LAST_CHAT_ID, _LAST_CHAT_NAMA, _LAST_DM_USER_ID, _LAST_DM_USER_NAMA
+    global _LAST_CHAT_ID, _LAST_CHAT_NAMA, _LAST_SENDER_ID, _LAST_DM_USER_ID, _LAST_DM_USER_NAMA
     del kwargs
     source = getattr(event, "source", None)
     if source is None or getattr(source.platform, "value", source.platform) != "telegram":
@@ -102,6 +131,7 @@ def _simpan_pesan_masuk(event, **kwargs):
     teks = event.text or ""
     jenis = event.message_type.value if getattr(event, "message_type", None) else "text"
     is_command = jenis == "command" or teks.strip().startswith("/")
+    _LAST_SENDER_ID = str(source.user_id) if source.user_id else None
 
     _LAST_CHAT_ID = str(source.chat_id)
     _LAST_CHAT_NAMA = source.chat_name
@@ -109,7 +139,15 @@ def _simpan_pesan_masuk(event, **kwargs):
     if not is_command:
         try:
             with connect() as conn:
+                grup_baru = (
+                    conn.execute(
+                        "SELECT 1 FROM groups WHERE telegram_chat_id = ?", (str(source.chat_id),)
+                    ).fetchone()
+                    is None
+                )
                 group_id = get_or_create_group(conn, str(source.chat_id), source.chat_name)
+                if grup_baru:
+                    _kirim_perkenalan(str(source.chat_id))
                 kata_kunci = ambil_pengaturan_grup(conn, group_id=group_id).get("kata_kunci_penting", [])
                 noise = is_noise(teks, jenis=jenis, kata_kunci_penting=kata_kunci)
                 member_id = get_or_create_member(
@@ -341,6 +379,37 @@ def _handle_konteks(raw_args, ctx=None):
     return f'Oke, konteks kamu sudah disimpan: "{konteks}"'
 
 
+def _handle_hapusdata(raw_args, ctx=None):
+    del ctx
+    if not _LAST_CHAT_ID:
+        return "Perintah ini cuma bisa dipakai di dalam grup."
+    if not _LAST_SENDER_ID:
+        return "Tidak bisa memastikan identitas pengirim, coba lagi."
+
+    try:
+        token = baca_bot_token()
+        admin = is_group_admin(token, _LAST_CHAT_ID, _LAST_SENDER_ID)
+    except Exception as exc:
+        return f"Gagal memverifikasi status admin: {exc}"
+
+    if not admin:
+        return "Cuma admin grup yang boleh menjalankan /hapusdata."
+
+    if (raw_args or "").strip().lower() != "konfirmasi":
+        return (
+            "⚠️ Ini akan MENGHAPUS PERMANEN semua data grup ini (pesan, ringkasan, "
+            "tenggat, pengingat) -- TIDAK BISA DIBATALKAN.\n\n"
+            "Kalau yakin, ketik: /hapusdata konfirmasi"
+        )
+
+    with connect() as conn:
+        group_id = get_or_create_group(conn, _LAST_CHAT_ID, _LAST_CHAT_NAMA)
+        hasil = hapus_data_grup(conn, group_id=group_id)
+
+    total = sum(hasil.values())
+    return f"✅ Data grup ini sudah dihapus ({total} baris data: {hasil})."
+
+
 def _persona_ringkas(session_info: dict) -> str:
     """System prompt section: persona 'Ringkas' + aturan Q&A riwayat grup (H5).
 
@@ -389,6 +458,11 @@ def register(ctx):
         "konteks",
         handler=_handle_konteks,
         description="Simpan konteks personal untuk ringkasan DM",
+    )
+    ctx.register_command(
+        "hapusdata",
+        handler=_handle_hapusdata,
+        description="[Admin] Hapus permanen semua data grup ini",
     )
     ctx.register_system_prompt_section(
         "ringkas.persona",

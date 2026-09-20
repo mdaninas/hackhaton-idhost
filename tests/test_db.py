@@ -24,6 +24,8 @@ from ringkas.db import (
     tambah_item,
     tambah_pengingat,
     tandai_pengingat_terkirim,
+    bersihkan_pesan_kadaluarsa,
+    hapus_data_grup,
 )
 
 
@@ -280,3 +282,45 @@ def test_anggota_grup_dm_aktif(conn):
     anggota = anggota_grup_dm_aktif(conn, group_id=gid)
     assert len(anggota) == 1
     assert anggota[0]["telegram_user_id"] == "861697558"
+
+
+def test_hapus_data_grup_menghapus_semua_dan_tidak_bisa_diulang(conn):
+    gid = get_or_create_group(conn, "-100123", nama="Grup Hapus")
+    msg_id = insert_message(conn, group_id=gid, telegram_msg_id="1", sender_id=None, teks="halo")
+    simpan_ringkasan(
+        conn, group_id=gid, periode_mulai="2026-01-01T00:00:00+00:00", periode_selesai="2026-01-01T23:59:59+00:00",
+        isi_markdown="ringkasan", jumlah_pesan=1, jumlah_penting=1,
+    )
+    item_id = tambah_item(
+        conn, group_id=gid, summary_id=None, tipe="pengumuman", judul="tes",
+        detail=None, due_at=None, source_msg_ids=[msg_id],
+    )
+    tambah_pengingat(conn, item_id=item_id, kirim_pada="2026-01-01T00:00:00+00:00")
+
+    hasil = hapus_data_grup(conn, group_id=gid)
+    assert hasil["messages"] == 1
+    assert hasil["items"] == 1
+    assert hasil["summaries"] == 1
+    assert hasil["reminders"] == 1
+
+    assert conn.execute("SELECT COUNT(*) AS c FROM messages WHERE group_id = ?", (gid,)).fetchone()["c"] == 0
+    assert conn.execute("SELECT COUNT(*) AS c FROM groups WHERE id = ?", (gid,)).fetchone()["c"] == 0
+
+
+def test_bersihkan_pesan_kadaluarsa(conn):
+    gid = get_or_create_group(conn, "-100123")  # retensi_hari default 7
+    lama = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+    baru = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        "INSERT INTO messages (group_id, telegram_msg_id, teks, jenis, is_noise, created_at) VALUES (?, ?, ?, 'text', 0, ?)",
+        (gid, "1", "pesan lama", lama),
+    )
+    conn.execute(
+        "INSERT INTO messages (group_id, telegram_msg_id, teks, jenis, is_noise, created_at) VALUES (?, ?, ?, 'text', 0, ?)",
+        (gid, "2", "pesan baru", baru),
+    )
+    hasil = bersihkan_pesan_kadaluarsa(conn)
+    assert hasil.get(gid) == 1
+    sisa = conn.execute("SELECT teks FROM messages WHERE group_id = ?", (gid,)).fetchall()
+    assert len(sisa) == 1
+    assert sisa[0]["teks"] == "pesan baru"

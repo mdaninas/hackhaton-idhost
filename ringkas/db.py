@@ -462,3 +462,38 @@ def anggota_grup_dm_aktif(conn: sqlite3.Connection, *, group_id: int) -> list[sq
         """,
         (group_id,),
     ).fetchall()
+
+
+def hapus_data_grup(conn: sqlite3.Connection, *, group_id: int) -> dict:
+    """Hapus SEMUA data sebuah grup (kontrol privasi, /hapusdata). Tidak bisa dibatalkan.
+
+    Tidak menghapus baris `members` (profil member itu global, dipakai lintas
+    grup) -- hanya semua data yang terikat ke grup ini.
+    """
+    hasil = {}
+    hasil["reminders"] = conn.execute(
+        "DELETE FROM reminders WHERE item_id IN (SELECT id FROM items WHERE group_id = ?)", (group_id,)
+    ).rowcount
+    hasil["items"] = conn.execute("DELETE FROM items WHERE group_id = ?", (group_id,)).rowcount
+    hasil["summaries"] = conn.execute("DELETE FROM summaries WHERE group_id = ?", (group_id,)).rowcount
+    hasil["messages"] = conn.execute("DELETE FROM messages WHERE group_id = ?", (group_id,)).rowcount
+    hasil["magic_links"] = conn.execute("DELETE FROM magic_links WHERE group_id = ?", (group_id,)).rowcount
+    hasil["stats_daily"] = conn.execute("DELETE FROM stats_daily WHERE group_id = ?", (group_id,)).rowcount
+    conn.execute("DELETE FROM groups WHERE id = ?", (group_id,))
+    return hasil
+
+
+def bersihkan_pesan_kadaluarsa(conn: sqlite3.Connection) -> dict:
+    """Hapus pesan mentah yang lebih tua dari `retensi_hari` tiap grup aktif.
+
+    Ringkasan (`summaries`) dan item (`items`) TIDAK dihapus -- cuma pesan
+    mentah di tabel `messages`. Return dict {group_id: jumlah_dihapus}.
+    """
+    hasil = {}
+    now_utc = datetime.now(timezone.utc)
+    for g in conn.execute("SELECT id, retensi_hari FROM groups WHERE aktif = 1").fetchall():
+        batas = (now_utc - timedelta(days=g["retensi_hari"])).isoformat()
+        cur = conn.execute("DELETE FROM messages WHERE group_id = ? AND created_at < ?", (g["id"], batas))
+        if cur.rowcount:
+            hasil[g["id"]] = cur.rowcount
+    return hasil

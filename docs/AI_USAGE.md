@@ -42,3 +42,10 @@
 - **Fitur DM** (`/mulai`, `/konteks`, `ringkas/dm_summary.py`) dan **memori koreksi grup** (tool `koreksi_penting`, kolom `kata_kunci_penting`) — dirancang dan diimplementasikan penuh oleh Claude Code, setelah dua keputusan desain dikonfirmasi bersama Dani (kata kunci di DB sendiri vs memori Hermes; command eksplisit `/konteks` vs ekstraksi otomatis).
 - **Bug ditemukan & diperbaiki:** command `/start` bentrok built-in Hermes (diganti `/mulai`); DM Dani awalnya diblokir (perlu `TELEGRAM_ALLOWED_USERS`); agent sempat salah pakai tool `memory` bawaan Hermes alih-alih `koreksi_penting` (instruksi persona diperjelas) — ditemukan lewat pengujian live, bukan asumsi.
 - **`eval/seed_group.py` + `eval/run_eval.py`** (data seed 260 pesan berlabel, penghitung recall/precision) — dibuat penuh oleh Claude Code. Hasil evaluasi pertama memicu 2 perbaikan nyata di `noise_filter.py` (dedeteksi lewat evaluasi ini sendiri, bukan diketahui sebelumnya), recall/precision naik dari 95.2%/31.2% jadi 100%/100%. Detail lengkap + keterbatasan metodologi di `docs/EVAL.md`.
+
+## H7 — 2026-09-20: Stabilisasi, privasi, systemd, gerbang keputusan
+
+- **Migrasi gateway ke systemd service**, **`/hapusdata`** (dengan cek admin via Telegram API + konfirmasi 2 langkah), **pesan perkenalan grup**, dan **job retensi data** — dirancang dan diimplementasikan penuh oleh Claude Code.
+- **Verifikasi reboot VPS sungguhan** dilakukan atas izin eksplisit Dani (aksi berdampak, dikonfirmasi dulu sebelum jalan) -- service systemd terbukti auto-start tanpa campur tangan manual.
+- **Bug allowlist Telegram ditemukan & diperbaiki**: `"*"` ternyata cuma didukung untuk allowlist user (DM), bukan allowlist chat/grup -- ditemukan lewat pembacaan source code adapter Telegram langsung setelah pengujian live gagal berulang kali, bukan asumsi dari dokumentasi.
+- **Keputusan gerbang H7** (lanjut ke H8 dashboard vs skip ke H9): rekomendasi disusun Claude Code berdasarkan data (recall evaluasi, stabilitas fitur teruji), keputusan akhir dikonfirmasi eksplisit oleh Dani.

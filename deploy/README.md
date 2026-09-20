@@ -40,12 +40,31 @@ hermes cron create "0 13 * * *" --no-agent --script ringkas_daily_summary.py \
 
 hermes cron create "5 13 * * *" --no-agent --script ringkas_dm_summary.py \
   --deliver local --name "ringkas-dm-summary"
+
+hermes cron create "30 13 * * *" --no-agent --script ringkas_retensi.py \
+  --deliver local --name "ringkas-retensi"
 ```
 
-(`0 13 * * *` = jam 20:00 WIB, `5 13 * * *` = 20:05 WIB, karena VPS ini pakai UTC.)
+(`0 13 * * *` = jam 20:00 WIB, `5 13 * * *` = 20:05 WIB, `30 13 * * *` = 20:30
+WIB, karena VPS ini pakai UTC.)
 
-## Allowlist DM personal (H6)
+## Gateway sebagai systemd service (H7)
 
-`/mulai` dan `/konteks` di DM cuma bisa dipakai user yang ada di
-`TELEGRAM_ALLOWED_USERS` (di `.env`) -- tambahkan `telegram_user_id` tiap
-pengguna baru yang mau pakai fitur DM ke variabel itu (pisah koma).
+```bash
+sudo hermes gateway install --system --run-as-user root --start-now --start-on-login
+```
+
+`--run-as-user root` WAJIB di VPS ini karena seluruh setup (plugin, DB, .env)
+ada di bawah `/root` -- Hermes menolak install sebagai root secara default
+tanpa flag ini. Restart setelah update kode: `systemctl restart hermes-gateway`.
+
+## Allowlist Telegram (H6/H7)
+
+- **Grup & chat**: `TELEGRAM_GROUP_ALLOWED_CHATS` / `TELEGRAM_ALLOWED_CHATS`
+  HARUS DIKOSONGKAN (bukan diisi `"*"` -- itu tidak didukung untuk chat/grup
+  di versi Hermes ini, cuma untuk user) supaya bot bisa dipakai di grup
+  manapun. Kalau perlu dibatasi ke grup tertentu, isi dengan chat_id
+  dipisah koma.
+- **DM personal** (`/mulai`, `/konteks`): `TELEGRAM_ALLOWED_USERS=*` supaya
+  siapa saja bisa pakai fitur DM. Bisa dibatasi ke user tertentu (pisah koma)
+  kalau mau kontrol biaya OpenAI API lebih ketat.

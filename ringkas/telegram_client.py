@@ -37,3 +37,14 @@ def kirim_pesan(token: str, chat_id: str, teks: str) -> None:
     req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=15) as resp:
         resp.read()
+
+
+def is_group_admin(token: str, chat_id: str, user_id: str) -> bool:
+    """True kalau user_id adalah admin/creator grup chat_id (dicek langsung ke Telegram)."""
+    url = f"https://api.telegram.org/bot{token}/getChatMember?chat_id={chat_id}&user_id={user_id}"
+    with urllib.request.urlopen(url, timeout=15) as resp:
+        data = json.loads(resp.read())
+    if not data.get("ok"):
+        return False
+    status = data.get("result", {}).get("status")
+    return status in {"administrator", "creator"}
