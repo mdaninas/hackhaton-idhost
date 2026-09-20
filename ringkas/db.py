@@ -497,3 +497,27 @@ def bersihkan_pesan_kadaluarsa(conn: sqlite3.Connection) -> dict:
         if cur.rowcount:
             hasil[g["id"]] = cur.rowcount
     return hasil
+
+
+def statistik_grup(conn: sqlite3.Connection, *, group_id: int) -> dict:
+    """Statistik ringkas grup: total pesan, noise, item penting, tenggat aktif."""
+    total = conn.execute("SELECT COUNT(*) AS c FROM messages WHERE group_id = ?", (group_id,)).fetchone()["c"]
+    noise = conn.execute(
+        "SELECT COUNT(*) AS c FROM messages WHERE group_id = ? AND is_noise = 1", (group_id,)
+    ).fetchone()["c"]
+    item_penting = conn.execute("SELECT COUNT(*) AS c FROM items WHERE group_id = ?", (group_id,)).fetchone()["c"]
+    tenggat_aktif = conn.execute(
+        "SELECT COUNT(*) AS c FROM items WHERE group_id = ? AND tipe = 'tenggat' AND status = 'aktif'",
+        (group_id,),
+    ).fetchone()["c"]
+    jumlah_ringkasan = conn.execute(
+        "SELECT COUNT(*) AS c FROM summaries WHERE group_id = ?", (group_id,)
+    ).fetchone()["c"]
+    return {
+        "total_pesan": total,
+        "pesan_noise": noise,
+        "pesan_penting": total - noise,
+        "item_penting": item_penting,
+        "tenggat_aktif": tenggat_aktif,
+        "jumlah_ringkasan": jumlah_ringkasan,
+    }

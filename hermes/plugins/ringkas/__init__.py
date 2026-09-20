@@ -37,6 +37,7 @@ from ringkas.db import (  # noqa: E402
     set_konteks_personal,
     simpan_ringkasan,
     simpan_tenggat_dengan_pengingat,
+    statistik_grup,
     tambah_item,
 )
 from ringkas.noise_filter import is_noise  # noqa: E402
@@ -410,6 +411,33 @@ def _handle_hapusdata(raw_args, ctx=None):
     return f"✅ Data grup ini sudah dihapus ({total} baris data: {hasil})."
 
 
+_DETIK_BACA_PER_PESAN = 8  # asumsi rata-rata waktu baca 1 pesan chat, dipakai untuk estimasi waktu hemat
+
+
+def _handle_statistik(raw_args, ctx=None):
+    del raw_args, ctx
+    if not _LAST_CHAT_ID:
+        return "Perintah ini cuma bisa dipakai di dalam grup."
+    with connect() as conn:
+        group_id = get_or_create_group(conn, _LAST_CHAT_ID, _LAST_CHAT_NAMA)
+        pengaturan = ambil_pengaturan_grup(conn, group_id=group_id)
+        stat = statistik_grup(conn, group_id=group_id)
+
+    menit_hemat = (stat["pesan_noise"] * _DETIK_BACA_PER_PESAN) / 60
+    nama_grup = pengaturan.get("nama") or _LAST_CHAT_NAMA or "Grup"
+    return (
+        f"📊 Statistik {nama_grup}\n\n"
+        f"Total pesan tercatat: {stat['total_pesan']}\n"
+        f"Noise (basa-basi/stiker/dst): {stat['pesan_noise']}\n"
+        f"Pesan bermuatan info: {stat['pesan_penting']}\n"
+        f"Item penting terekam: {stat['item_penting']}\n"
+        f"Tenggat aktif: {stat['tenggat_aktif']}\n"
+        f"Ringkasan sudah dibuat: {stat['jumlah_ringkasan']}\n\n"
+        f"Estimasi waktu hemat (asumsi {_DETIK_BACA_PER_PESAN} detik/pesan noise "
+        f"tidak perlu dibaca): ~{menit_hemat:.0f} menit"
+    )
+
+
 def _persona_ringkas(session_info: dict) -> str:
     """System prompt section: persona 'Ringkas' + aturan Q&A riwayat grup (H5).
 
@@ -463,6 +491,11 @@ def register(ctx):
         "hapusdata",
         handler=_handle_hapusdata,
         description="[Admin] Hapus permanen semua data grup ini",
+    )
+    ctx.register_command(
+        "statistik",
+        handler=_handle_statistik,
+        description="Statistik grup: pesan, noise, item penting, tenggat",
     )
     ctx.register_system_prompt_section(
         "ringkas.persona",

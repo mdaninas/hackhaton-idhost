@@ -10,7 +10,7 @@
 
 - **Hari berjalan:** H7 (selesai)
 - **Arsitektur:** Plan A dipilih — Hermes memegang bot Telegram sepenuhnya, tapi logika "simpan semua pesan + diam kecuali di-mention" dipindah ke plugin Hermes sendiri (`hermes/plugins/ringkas/`), bukan fitur observe bawaan Hermes yang ternyata tidak bisa diintersep. Lihat `docs/DECISIONS.md`.
-- **Gerbang H7 (dashboard):** ✅ LANJUT ke H8 — recall evaluasi 100%, fitur stabil, dikonfirmasi Dani.
+- **Gerbang H7 (dashboard):** ⚠️ DIBATALKAN — deadline submit ternyata malam ini (2026-09-20), bukan 30 Sept seperti tercatat semula. Skip dashboard (H8), langsung ke fallback H7 (`/statistik`) + H9 (persiapan submit) + H10 (video & artikel) dipadatkan malam ini.
 - **Catatan terakhir:** Gateway sekarang systemd service (tahan reboot, diuji nyata). Privasi: `/hapusdata` (admin-only, 2 langkah konfirmasi), pesan perkenalan grup, retensi data otomatis -- semua diverifikasi live. Bug ditemukan & diperbaiki: allowlist Telegram `"*"` cuma jalan untuk user bukan grup/chat (dicek langsung ke source code). Grup & DM sekarang terbuka untuk siapa saja (bukan cuma grup/user uji), sesuai desain multi-grup. 36 unit test lulus. Gap yang masih terbuka: ringkasan harian hardcode jam sama untuk semua grup, cuma 1 pengguna nyata diuji untuk fitur DM, evaluasi baru menguji `noise_filter` bukan akurasi ekstraksi item LLM, pesan perkenalan grup adalah proxy (pesan pertama terlihat) bukan event join asli. Item H1 opsional (cek Hermes terima foto) belum dikerjakan, tidak prioritas.
 
 ---
